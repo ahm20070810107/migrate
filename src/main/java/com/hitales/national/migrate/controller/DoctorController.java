@@ -18,4 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RequestMapping("doctor/")
 public class DoctorController {
+
+
 }
