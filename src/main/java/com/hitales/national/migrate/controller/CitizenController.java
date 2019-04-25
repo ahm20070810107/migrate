@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Slf4j
 @Validated
-@RequestMapping("citizen/")
+@RequestMapping("citizen")
 public class CitizenController {
 
     @Value("${excel.citizenSheet}")

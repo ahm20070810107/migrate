@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Slf4j
 @Validated
-@RequestMapping("doctor/")
+@RequestMapping("doctor")
 public class DoctorController {
     @Value("${excel.doctorSheet}")
     private String doctorSheet;
