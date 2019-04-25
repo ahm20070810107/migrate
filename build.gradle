@@ -1,0 +1,44 @@
+buildscript {
+    repositories {
+        maven { url 'http://114.55.40.105:8081/repository/gradle-plugin/' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
+    }
+}
+
+plugins {
+    id 'org.springframework.boot' version '2.0.6.RELEASE'
+    id 'java'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.hitales.national'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    maven { url 'http://114.55.40.105:8081/repository/hitales-maven/' }
+    maven { url 'http://114.55.40.105:8081/repository/aliyun-jcenter/' }
+    maven { url 'https://maven.aliyun.com/repository/public' }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compile 'com.hitales:hitales-commons-core:0.2.0-SNAPSHOT'
+    compile group: 'com.alibaba', name: 'fastjson', version: '1.2.41'
+    compile group: 'org.apache.poi', name: 'poi', version: '3.17'
+    compile group: 'org.apache.poi', name: 'poi-ooxml', version: '3.17'
+    compile 'org.modelmapper:modelmapper:2.3.2'
+    compile 'com.hitales:hitales-commons-jpa:0.2.0-SNAPSHOT'
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'mysql:mysql-connector-java'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
