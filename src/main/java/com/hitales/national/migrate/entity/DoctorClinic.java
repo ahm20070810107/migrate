@@ -1,5 +1,6 @@
 package com.hitales.national.migrate.entity;
 
+import com.hitales.national.migrate.converter.ListLongConverter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -50,7 +51,7 @@ public class DoctorClinic extends AuditableEntity {
     private Integer parentId;
 
     @Column(name = "[scope]", columnDefinition = "varchar(4000) default '' comment '辖区（多条以,分割)'")
-//    @Convert(converter = ListLongConverter.class)
+    @Convert(converter = ListLongConverter.class)
     private List<Long> scope;
 
     @Column(name = "depth", columnDefinition = "tinyint unsigned default 0 comment '节点深度，根为0'")

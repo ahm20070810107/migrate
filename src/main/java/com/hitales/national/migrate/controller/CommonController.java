@@ -20,8 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Slf4j
 @Validated
-@RequestMapping("citizen")
+@RequestMapping("common")
 public class CommonController {
+
     @Value("${excel.operatorSheet}")
     private String operatorSheet;
 

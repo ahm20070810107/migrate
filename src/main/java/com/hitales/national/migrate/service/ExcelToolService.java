@@ -8,6 +8,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -34,8 +35,8 @@ public class ExcelToolService {
     public static final Integer MAX_READ_SIZE = 1000;
     private XSSFWorkbook xssfSourceWorkbook;
 
-
-    private ExcelToolService(){
+    @PostConstruct
+    private void init(){
         if(Strings.isNullOrEmpty(sourceFile)){
             throw new RuntimeException("excel路径为空！");
         }
