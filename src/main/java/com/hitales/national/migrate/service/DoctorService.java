@@ -1,6 +1,8 @@
 package com.hitales.national.migrate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -13,9 +15,14 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class DoctorService implements BasicService{
+    @Autowired
+    private ExcelToolService excelToolService;
 
     @Override
     public void verify(String sheetName){
+        SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolService.MAX_READ_SIZE);
+
+        excelToolService.saveExcelFile(verifyWorkbook, sheetName);
 
     }
 

@@ -1,4 +1,4 @@
-package com.hitales.national.migrate.common;
+package com.hitales.national.migrate.service;
 
 import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +8,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -21,25 +23,24 @@ import java.util.Objects;
 
 @Component
 @Slf4j
-public class ReadExcelTool {
+public class ExcelToolService {
     @Value("${excel.sourceFile}")
     private String sourceFile;
 
     @Value("${excel.verifyResultFile}")
     private String verifyResultFile;
 
-    private final Integer MAX_READ_SIZE = 1000;
-    private XSSFWorkbook xssfSourceWorkbook;
-    private SXSSFWorkbook sxssfVerifyWorkbook;
 
-    private ReadExcelTool(){
+    public static final Integer MAX_READ_SIZE = 1000;
+    private XSSFWorkbook xssfSourceWorkbook;
+
+
+    private ExcelToolService(){
         if(Strings.isNullOrEmpty(sourceFile)){
             throw new RuntimeException("excel路径为空！");
         }
         try {
             xssfSourceWorkbook = new XSSFWorkbook(sourceFile);
-            XSSFWorkbook xssfWorkbook = new XSSFWorkbook(verifyResultFile);
-            sxssfVerifyWorkbook = new SXSSFWorkbook(xssfWorkbook,MAX_READ_SIZE);
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -57,5 +58,23 @@ public class ReadExcelTool {
     }
 
 
+    public void saveExcelFile(SXSSFWorkbook sxssfWorkbook, String saveType){
+        String savePath = getVerifyExcelName(saveType);
+        File file = new File(savePath);
+        if(!file.getParentFile().exists()){
+            file.getParentFile().mkdirs();
+        }
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(savePath);
+            sxssfWorkbook.write(fileOutputStream);
+            fileOutputStream.flush();
+            fileOutputStream.close();
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+    }
 
+    private String getVerifyExcelName(String saveType){
+        return  verifyResultFile + "_" + saveType +".xlsx";
+    }
 }
