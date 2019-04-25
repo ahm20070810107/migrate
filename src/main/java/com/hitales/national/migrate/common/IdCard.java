@@ -154,7 +154,7 @@ public class IdCard {
 	 * @return 18位身份编码
 	 */
 	private static String toNumber18(String number) {
-		String idCard18 = null;
+		String idCard18;
 		if (number.length() == CHINA_ID_MAX_LENGTH) {
 			return number;
 		}
@@ -166,16 +166,14 @@ public class IdCard {
 		idCard18 = number.substring(0, 6) + sYear + number.substring(8);
 		// 转换字符数组
 		char[] cArr = idCard18.toCharArray();
-		if (cArr != null) {
-			int[] iCard = converCharToInt(cArr);
-			int iSum17 = getPowerSum(iCard);
-			// 获取校验位
-			String sVal = getCheckCode18(iSum17);
-			if (sVal.length() > 0) {
-				idCard18 += sVal;
-			} else {
-				return null;
-			}
+		int[] iCard = converCharToInt(cArr);
+		int iSum17 = getPowerSum(iCard);
+		// 获取校验位
+		String sVal = getCheckCode18(iSum17);
+		if (sVal.length() > 0) {
+			idCard18 += sVal;
+		} else {
+			return null;
 		}
 		return idCard18;
 	}
