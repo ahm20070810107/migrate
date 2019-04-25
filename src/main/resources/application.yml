@@ -1,5 +1,9 @@
 server:
   port: 8088
+
+excel:
+  path: /data/hitales/
+  pathFileName: ${excel.path}全民健康3.0数据初始化模板.xlsx
 hitales:
   national:
     migrate:
