@@ -9,6 +9,6 @@ package com.hitales.national.migrate.service;
  */
 public interface BasicService {
 
-    void verity(String sheetName);
+    void verify(String sheetName);
     void importToDb(String sheetName);
 }

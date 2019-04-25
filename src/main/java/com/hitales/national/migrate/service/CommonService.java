@@ -12,15 +12,13 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @Slf4j
-public class CommonService implements BasicService {
+public class CommonService {
 
-    @Override
-    public void verity(String sheetName){
+    public void verify(String operatorSheet, String clinicSheet,String countySheet, String villageSheet){
 
     }
 
-    @Override
-    public void importToDb(String sheetName){
+    public void importToDb(String operatorSheet, String clinicSheet,String countySheet, String villageSheet){
 
     }
 }

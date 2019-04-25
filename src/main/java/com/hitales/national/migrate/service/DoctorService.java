@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class DoctorService implements BasicService{
 
     @Override
-    public void verity(String sheetName){
+    public void verify(String sheetName){
 
     }
 

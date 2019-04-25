@@ -3,7 +3,14 @@ server:
 
 excel:
   path: /data/hitales/
-  pathFileName: ${excel.path}全民健康3.0数据初始化模板.xlsx
+  sourceFile: ${excel.path}全民健康3.0数据初始化模板.xlsx
+  verifyResultFile: ${excel.path}全民健康3.0数据校验结果
+  citizenSheet: 居民信息
+  doctorSheet: 医生信息
+  operatorSheet: 运营用户
+  clinicSheet: 医疗机构
+  countySheet: 行政县
+  villageSheet: 自然村
 hitales:
   national:
     migrate:

@@ -2,8 +2,8 @@ package com.hitales.national.migrate.common;
 
 import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -22,47 +22,40 @@ import java.util.Objects;
 @Component
 @Slf4j
 public class ReadExcelTool {
-    @Value("${excel.pathFileName}")
-    private String pathFileName;
+    @Value("${excel.sourceFile}")
+    private String sourceFile;
 
-    private final Integer MAX_READ_SIZE = 10000;
-    private SXSSFWorkbook sxssfWorkbook;
+    @Value("${excel.verifyResultFile}")
+    private String verifyResultFile;
 
-    private static ReadExcelTool readExcelTool;
+    private final Integer MAX_READ_SIZE = 1000;
+    private XSSFWorkbook xssfSourceWorkbook;
+    private SXSSFWorkbook sxssfVerifyWorkbook;
+
     private ReadExcelTool(){
-        if(Strings.isNullOrEmpty(pathFileName)){
+        if(Strings.isNullOrEmpty(sourceFile)){
             throw new RuntimeException("excel路径为空！");
         }
         try {
-            XSSFWorkbook xssfWorkbook = new XSSFWorkbook(pathFileName);
-            sxssfWorkbook = new SXSSFWorkbook(xssfWorkbook,MAX_READ_SIZE);
+            xssfSourceWorkbook = new XSSFWorkbook(sourceFile);
+            XSSFWorkbook xssfWorkbook = new XSSFWorkbook(verifyResultFile);
+            sxssfVerifyWorkbook = new SXSSFWorkbook(xssfWorkbook,MAX_READ_SIZE);
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
     }
 
-    public static ReadExcelTool getInstance(){
-        if(Objects.isNull(readExcelTool)){
-            initInstance();
-        }
-        return readExcelTool;
-    }
-
-    private synchronized static void initInstance(){
-        if(Objects.isNull(readExcelTool)){
-            readExcelTool = new ReadExcelTool();
-        }
-    }
-
-    public SXSSFSheet getSheetByName(String sheetName){
+    public XSSFSheet getSourceSheetByName(String sheetName){
         if(Strings.isNullOrEmpty(sheetName)){
             throw new RuntimeException("sheetName不能为空！");
         }
-        SXSSFSheet sxssfSheet = sxssfWorkbook.getSheet(sheetName);
-        if(Objects.isNull(sxssfSheet)){
-            return sxssfWorkbook.createSheet(sheetName);
+        XSSFSheet xssfSheet = xssfSourceWorkbook.getSheet(sheetName);
+        if(Objects.isNull(xssfSheet)){
+            return xssfSourceWorkbook.createSheet(sheetName);
         }
-        return sxssfSheet;
+        return xssfSheet;
     }
+
+
 
 }
