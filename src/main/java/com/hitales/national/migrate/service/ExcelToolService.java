@@ -59,10 +59,12 @@ public class ExcelToolService {
 
 
     public void saveExcelFile(SXSSFWorkbook sxssfWorkbook, String saveType){
-        String savePath = getVerifyExcelName(saveType);
+        String savePath = verifyResultFile + "_" + saveType +".xlsx";
         File file = new File(savePath);
-        if(!file.getParentFile().exists()){
-            file.getParentFile().mkdirs();
+        if(file.exists()) {
+            if(!file.delete()){
+                throw new RuntimeException(String.format("旧校验结果【{}】删除失败，不能写入新校验结果！",savePath));
+            }
         }
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(savePath);
@@ -74,7 +76,4 @@ public class ExcelToolService {
         }
     }
 
-    private String getVerifyExcelName(String saveType){
-        return  verifyResultFile + "_" + saveType +".xlsx";
-    }
 }
