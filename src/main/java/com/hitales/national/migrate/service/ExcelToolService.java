@@ -56,7 +56,10 @@ public class ExcelToolService {
         }
         XSSFSheet xssfSheet = xssfSourceWorkbook.getSheet(sheetName);
         if(Objects.isNull(xssfSheet)){
-            return xssfSourceWorkbook.createSheet(sheetName);
+            throw new RuntimeException(String.format("【{}】sheet在excel中不存在！", sheetName));
+        }
+        if(xssfSheet.getLastRowNum() < 2){
+            throw new RuntimeException(String.format("【{}】sheet的数据为空！", sheetName));
         }
         return xssfSheet;
     }
@@ -88,5 +91,13 @@ public class ExcelToolService {
             row.createCell(i).setCellValue(headers[i]);
         }
         return sheet;
+    }
+
+    public void fillSheetRow(int index,Row row, String ... params){
+        int cellIndex = 1;
+        row.createCell(0).setCellValue(index);
+        for(String param : params){
+            row.createCell(cellIndex++).setCellValue(param);
+        }
     }
 }

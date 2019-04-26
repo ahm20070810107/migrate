@@ -71,10 +71,6 @@ public class CommonService {
 
         XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(countySheet);
         int verifyRowCount = 1;
-        if(sourceDataSheet.getLastRowNum() < 2){
-            log.warn("【{}】sheet的数据为空！", countySheet);
-            return false;
-        }
         Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, countySheet, "原始行号,名称,域名前缀,对应县行政区划编码,备注",",");
 
         for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++) {
@@ -110,7 +106,7 @@ public class CommonService {
             }
             if(count.compareTo(1) > 0){
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                fillSheetRow(i+1, verifyRow, countyName, countyPrefix, govCountyCode,sb.toString());
+                excelToolService.fillSheetRow(i+1, verifyRow, countyName, countyPrefix, govCountyCode,sb.toString());
                 verifyResult = false;
 
             }
@@ -123,10 +119,6 @@ public class CommonService {
         boolean resultVerify = true;
 
         XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(villageSheet);
-        if(sourceDataSheet.getLastRowNum() < 2){
-            log.warn("【{}】sheet的数据为空！", villageSheet);
-            return false;
-        }
         Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, villageSheet, "原始行号,自然村名称,所属行政村编码,备注",",");
         int verifyRowCount = 1;
 
@@ -161,7 +153,7 @@ public class CommonService {
             if(count.compareTo(1) > 0){
                 resultVerify = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                fillSheetRow(i+1,verifyRow,villageName,govVillageCode,sb.toString());
+                excelToolService.fillSheetRow(i+1,verifyRow,villageName,govVillageCode,sb.toString());
             }
         }
         return resultVerify;
@@ -173,10 +165,6 @@ public class CommonService {
         XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(clinicSheet);
         boolean result = true;
 
-        if(sourceDataSheet.getLastRowNum() < 2){
-            log.warn("【{}】sheet的数据为空！", clinicSheet);
-            return false;
-        }
         Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, clinicSheet, "原始行号,名称,上级医疗机构,级别,管辖自然村,备注",",");
         int verifyRowCount = 1;
         for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++){
@@ -213,7 +201,7 @@ public class CommonService {
             if(count.compareTo(1) > 0){
                 result = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                fillSheetRow(i+1,verifyRow,clinicName,upClinicName,clinicClass,scopeVillage,sb.toString());
+                excelToolService.fillSheetRow(i+1,verifyRow,clinicName,upClinicName,clinicClass,scopeVillage,sb.toString());
             }
         }
         return result;
@@ -235,10 +223,6 @@ public class CommonService {
         boolean verifyResult = true;
         Set<String> userNameSet = new HashSet<>();
         XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(operatorSheet);
-        if(sourceDataSheet.getLastRowNum() < 2){
-            log.warn("【{}】sheet的数据为空！", operatorSheet);
-            return !verifyResult;
-        }
         Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, operatorSheet, "原始行号,用户名,密码,姓名,备注",",");
         int verifyRowCount = 1;
         for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++){
@@ -267,19 +251,11 @@ public class CommonService {
             if(count.compareTo(1) > 0){
                 verifyResult = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                fillSheetRow(i+1,verifyRow,loginName,password,userName,sb.toString());
+                excelToolService.fillSheetRow(i+1,verifyRow,loginName,password,userName,sb.toString());
             }
         }
         return verifyResult;
 
     }
 
-
-    private void fillSheetRow(int index,Row row, String ... params){
-        int cellIndex = 1;
-        row.createCell(0).setCellValue(index);
-        for(String param : params){
-            row.createCell(cellIndex++).setCellValue(param);
-        }
-    }
 }
