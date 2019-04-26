@@ -51,8 +51,31 @@ public class CommonService {
 
     }
 
+    private boolean verifyVillage(String villageSheet,  Set<String> villageSet, SXSSFWorkbook verifyWorkbook){
+        boolean result = true;
+        XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(villageSheet);
+        if(sourceDataSheet.getLastRowNum() < 2){
+            log.warn("【{}】sheet的数据为空！", villageSheet);
+            return result;
+        }
+        Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, villageSheet, "原始行号,自然村名称,所属行政村编码,备注",",");
+        int verifyRowCount = 1;
+
+        for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++) {
+            Row row = sourceDataSheet.getRow(i);
+            StringBuilder sb = new StringBuilder();
+            Integer count = 1;
+            String villageName = row.getCell(0).getStringCellValue();
+            String govVillageCode = row.getCell(1).getStringCellValue();
+            if(Strings.isNullOrEmpty(villageName) || Strings.isNullOrEmpty(govVillageCode)){
+                sb.append(count++).append("、自然村名称,所属行政村编码均不能为空！\r\n");
+            }
+
+        }
 
 
+        return result;
+    }
 
     private boolean verifyClinic(String clinicSheet, Set<String> villageSet, SXSSFWorkbook verifyWorkbook){
 
