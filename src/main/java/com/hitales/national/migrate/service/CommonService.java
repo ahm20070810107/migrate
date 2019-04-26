@@ -1,6 +1,7 @@
 package com.hitales.national.migrate.service;
 
 import com.google.common.base.Strings;
+import com.hitales.national.migrate.dao.CountyDao;
 import com.hitales.national.migrate.dao.DoctorClinicDao;
 import com.hitales.national.migrate.dao.GB2260Dao;
 import com.hitales.national.migrate.dao.OperatorDao;
@@ -35,6 +36,8 @@ public class CommonService {
     private DoctorClinicDao doctorClinicDao;
     @Autowired
     private GB2260Dao gb2260Dao;
+    @Autowired
+    private CountyDao countyDao;
 
     @Autowired
     private PasswordEncoder passEncoder;
@@ -50,24 +53,79 @@ public class CommonService {
         boolean operatorResult = verifyOperator(operatorSheet, verifyWorkbook);
         boolean villageResult = verifyVillage(villageSheet,villageSet,verifyWorkbook);
         boolean clinicResult = verifyClinic(clinicSheet,villageSet,verifyWorkbook);
-
+        boolean countyResult = verifyCounty(countySheet, verifyWorkbook);
         excelToolService.saveExcelFile(verifyWorkbook, "公共信息");
-        return operatorResult && clinicResult && villageResult;
+        return operatorResult && clinicResult && villageResult && countyResult;
     }
 
-    public void importToDb(String operatorSheet, String clinicSheet,String countySheet, String villageSheet){
-        if(Strings.isNullOrEmpty(operatorSheet) || Strings.isNullOrEmpty(clinicSheet) || Strings.isNullOrEmpty(countySheet) || Strings.isNullOrEmpty(villageSheet)){
-            throw new RuntimeException("自然村、行政县、医疗机构、运营用户的sheet名称均不能为空");
+    public boolean importToDb(String operatorSheet, String clinicSheet,String countySheet, String villageSheet){
+        if(!verify(operatorSheet,clinicSheet,countySheet,villageSheet)){
+            return false;
         }
 
+        return true;
     }
 
+    private boolean verifyCounty(String countySheet, SXSSFWorkbook verifyWorkbook){
+        boolean verifyResult = true;
+
+        XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(countySheet);
+        int verifyRowCount = 1;
+        if(sourceDataSheet.getLastRowNum() < 2){
+            log.warn("【{}】sheet的数据为空！", countySheet);
+            return false;
+        }
+        Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, countySheet, "原始行号,名称,域名前缀,对应县行政区划编码,备注",",");
+
+        for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++) {
+
+            StringBuilder sb = new StringBuilder();
+            Row row = sourceDataSheet.getRow(i);
+
+            String countyName = row.getCell(0).getStringCellValue();
+            String countyPrefix = row.getCell(1).getStringCellValue();
+            Integer count = 1;
+            String govCountyCode = row.getCell(2).getStringCellValue();
+            if(Strings.isNullOrEmpty(countyName) || Strings.isNullOrEmpty(countyPrefix)|| Strings.isNullOrEmpty(govCountyCode)){
+                sb.append(count++).append("、名称,域名前缀,所属行政村编码均不能为空！\r\n");
+            }else{
+                Long govCountLong = null;
+                try {
+                    govCountLong = Long.parseLong(govCountyCode);
+                } catch (NumberFormatException e) {
+                    sb.append(count++).append("、行政区划编码必须是15位数字\r\n");
+                }
+                if(!Objects.isNull(govCountLong) && gb2260Dao.findByNameAndCanonicalCode(countyName,govCountLong).size() < 1){
+                    sb.append(count++).append("、行政区划编码及对应名称在标准数据库中不存在\r\n");
+                }
+                if(!Objects.isNull(govCountLong) && countyDao.findByNameAndLocation(countyName, govCountLong).size() > 0){
+                    sb.append(count++).append("、行政区划编码及对应名称在数据库中已存在");
+                }
+            }
+            if(!Strings.isNullOrEmpty(countyName) && countyName.length() > 64){
+                sb.append(count++).append("、名称的长度不能超过64");
+            }
+            if(!Strings.isNullOrEmpty(countyPrefix) && countyPrefix.length() > 20){
+                sb.append(count++).append("、域名前缀的长度不能超过20");
+            }
+            if(count.compareTo(1) > 0){
+                Row verifyRow = verifySheet.createRow(verifyRowCount++);
+                fillSheetRow(i+1, verifyRow, countyName, countyPrefix, govCountyCode,sb.toString());
+                verifyResult = false;
+
+            }
+        }
+        return verifyResult;
+    }
+
+
     private boolean verifyVillage(String villageSheet,  Set<String> villageSet, SXSSFWorkbook verifyWorkbook){
-        boolean result = true;
+        boolean resultVerify = true;
+
         XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(villageSheet);
         if(sourceDataSheet.getLastRowNum() < 2){
             log.warn("【{}】sheet的数据为空！", villageSheet);
-            return result;
+            return false;
         }
         Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, villageSheet, "原始行号,自然村名称,所属行政村编码,备注",",");
         int verifyRowCount = 1;
@@ -101,12 +159,12 @@ public class CommonService {
             villageSet.add(villageName);
 
             if(count.compareTo(1) > 0){
-                result = false;
+                resultVerify = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
                 fillSheetRow(i+1,verifyRow,villageName,govVillageCode,sb.toString());
             }
         }
-        return result;
+        return resultVerify;
     }
 
     private boolean verifyClinic(String clinicSheet, Set<String> villageSet, SXSSFWorkbook verifyWorkbook){
@@ -117,7 +175,7 @@ public class CommonService {
 
         if(sourceDataSheet.getLastRowNum() < 2){
             log.warn("【{}】sheet的数据为空！", clinicSheet);
-            return result;
+            return false;
         }
         Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, clinicSheet, "原始行号,名称,上级医疗机构,级别,管辖自然村,备注",",");
         int verifyRowCount = 1;
@@ -179,7 +237,7 @@ public class CommonService {
         XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(operatorSheet);
         if(sourceDataSheet.getLastRowNum() < 2){
             log.warn("【{}】sheet的数据为空！", operatorSheet);
-            return verifyResult;
+            return !verifyResult;
         }
         Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, operatorSheet, "原始行号,用户名,密码,姓名,备注",",");
         int verifyRowCount = 1;
