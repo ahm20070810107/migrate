@@ -18,14 +18,15 @@ import org.springframework.stereotype.Service;
 public class CitizenService implements BasicService {
 
     @Autowired
-    private ExcelToolService excelToolService;
+    private ExcelToolAndCommonService excelToolAndCommonService;
 
     @Override
-    public void verify(String sheetName){
-         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolService.MAX_READ_SIZE);
+    public boolean verify(String sheetName){
+         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolAndCommonService.MAX_READ_SIZE);
 
 
-         excelToolService.saveExcelFile(verifyWorkbook, sheetName);
+         excelToolAndCommonService.saveExcelFile(verifyWorkbook, sheetName);
+         return true;
     }
 
     @Override

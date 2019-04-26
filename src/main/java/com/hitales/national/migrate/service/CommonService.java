@@ -29,7 +29,7 @@ import java.util.Set;
 @Slf4j
 public class CommonService {
     @Autowired
-    private ExcelToolService excelToolService;
+    private ExcelToolAndCommonService excelToolAndCommonService;
     @Autowired
     private OperatorDao operatorDao;
     @Autowired
@@ -48,13 +48,13 @@ public class CommonService {
         if(Strings.isNullOrEmpty(operatorSheet) || Strings.isNullOrEmpty(clinicSheet) || Strings.isNullOrEmpty(countySheet) || Strings.isNullOrEmpty(villageSheet)){
             throw new RuntimeException("自然村、行政县、医疗机构、运营用户的sheet名称均不能为空");
         }
-        SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolService.MAX_READ_SIZE);
+        SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolAndCommonService.MAX_READ_SIZE);
         Set<String> villageSet = new HashSet<>();
         boolean operatorResult = verifyOperator(operatorSheet, verifyWorkbook);
         boolean villageResult = verifyVillage(villageSheet,villageSet,verifyWorkbook);
         boolean clinicResult = verifyClinic(clinicSheet,villageSet,verifyWorkbook);
         boolean countyResult = verifyCounty(countySheet, verifyWorkbook);
-        excelToolService.saveExcelFile(verifyWorkbook, "公共信息");
+        excelToolAndCommonService.saveExcelFile(verifyWorkbook, "公共信息");
         return operatorResult && clinicResult && villageResult && countyResult;
     }
 
@@ -69,9 +69,9 @@ public class CommonService {
     private boolean verifyCounty(String countySheet, SXSSFWorkbook verifyWorkbook){
         boolean verifyResult = true;
 
-        XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(countySheet);
+        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(countySheet);
         int verifyRowCount = 1;
-        Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, countySheet, "原始行号,名称,域名前缀,对应县行政区划编码,备注",",");
+        Sheet verifySheet = excelToolAndCommonService.getNewSheet(verifyWorkbook, countySheet, "原始行号,名称,域名前缀,对应县行政区划编码,备注",",");
 
         for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++) {
 
@@ -106,7 +106,7 @@ public class CommonService {
             }
             if(count.compareTo(1) > 0){
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                excelToolService.fillSheetRow(i+1, verifyRow, countyName, countyPrefix, govCountyCode,sb.toString());
+                excelToolAndCommonService.fillSheetRow(i+1, verifyRow, countyName, countyPrefix, govCountyCode,sb.toString());
                 verifyResult = false;
 
             }
@@ -118,8 +118,8 @@ public class CommonService {
     private boolean verifyVillage(String villageSheet,  Set<String> villageSet, SXSSFWorkbook verifyWorkbook){
         boolean resultVerify = true;
 
-        XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(villageSheet);
-        Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, villageSheet, "原始行号,自然村名称,所属行政村编码,备注",",");
+        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(villageSheet);
+        Sheet verifySheet = excelToolAndCommonService.getNewSheet(verifyWorkbook, villageSheet, "原始行号,自然村名称,所属行政村编码,备注",",");
         int verifyRowCount = 1;
 
         for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++) {
@@ -153,7 +153,7 @@ public class CommonService {
             if(count.compareTo(1) > 0){
                 resultVerify = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                excelToolService.fillSheetRow(i+1,verifyRow,villageName,govVillageCode,sb.toString());
+                excelToolAndCommonService.fillSheetRow(i+1,verifyRow,villageName,govVillageCode,sb.toString());
             }
         }
         return resultVerify;
@@ -162,10 +162,10 @@ public class CommonService {
     private boolean verifyClinic(String clinicSheet, Set<String> villageSet, SXSSFWorkbook verifyWorkbook){
 
         Set<String> clinicNameSet = new HashSet<>();
-        XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(clinicSheet);
+        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(clinicSheet);
         boolean result = true;
 
-        Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, clinicSheet, "原始行号,名称,上级医疗机构,级别,管辖自然村,备注",",");
+        Sheet verifySheet = excelToolAndCommonService.getNewSheet(verifyWorkbook, clinicSheet, "原始行号,名称,上级医疗机构,级别,管辖自然村,备注",",");
         int verifyRowCount = 1;
         for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++){
             Row row = sourceDataSheet.getRow(i);
@@ -201,7 +201,7 @@ public class CommonService {
             if(count.compareTo(1) > 0){
                 result = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                excelToolService.fillSheetRow(i+1,verifyRow,clinicName,upClinicName,clinicClass,scopeVillage,sb.toString());
+                excelToolAndCommonService.fillSheetRow(i+1,verifyRow,clinicName,upClinicName,clinicClass,scopeVillage,sb.toString());
             }
         }
         return result;
@@ -222,8 +222,8 @@ public class CommonService {
     private boolean verifyOperator(String operatorSheet, SXSSFWorkbook verifyWorkbook){
         boolean verifyResult = true;
         Set<String> userNameSet = new HashSet<>();
-        XSSFSheet sourceDataSheet = excelToolService.getSourceSheetByName(operatorSheet);
-        Sheet verifySheet = excelToolService.getNewSheet(verifyWorkbook, operatorSheet, "原始行号,用户名,密码,姓名,备注",",");
+        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(operatorSheet);
+        Sheet verifySheet = excelToolAndCommonService.getNewSheet(verifyWorkbook, operatorSheet, "原始行号,用户名,密码,姓名,备注",",");
         int verifyRowCount = 1;
         for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++){
             Row row = sourceDataSheet.getRow(i);
@@ -251,7 +251,7 @@ public class CommonService {
             if(count.compareTo(1) > 0){
                 verifyResult = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                excelToolService.fillSheetRow(i+1,verifyRow,loginName,password,userName,sb.toString());
+                excelToolAndCommonService.fillSheetRow(i+1,verifyRow,loginName,password,userName,sb.toString());
             }
         }
         return verifyResult;

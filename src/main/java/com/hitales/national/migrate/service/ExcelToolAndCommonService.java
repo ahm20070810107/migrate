@@ -1,6 +1,7 @@
 package com.hitales.national.migrate.service;
 
 import com.google.common.base.Strings;
+import com.hitales.national.migrate.enums.Nation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -15,6 +16,8 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -27,13 +30,14 @@ import java.util.Objects;
 
 @Component
 @Slf4j
-public class ExcelToolService {
+public class ExcelToolAndCommonService {
     @Value("${excel.sourceFile}")
     private String sourceFile;
 
     @Value("${excel.verifyResultFile}")
     private String verifyResultFile;
 
+    private Map<String, Nation> mapNation = new HashMap<>();
 
     public static final Integer MAX_READ_SIZE = 1000;
     private XSSFWorkbook xssfSourceWorkbook;
@@ -43,11 +47,20 @@ public class ExcelToolService {
         if(Strings.isNullOrEmpty(sourceFile)){
             throw new RuntimeException("excel路径为空！");
         }
+        for(Nation nation : Nation.values()){
+            mapNation.put(nation.getDesc(),nation);
+        }
         try {
             xssfSourceWorkbook = new XSSFWorkbook(sourceFile);
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    public Nation getNation(String nation){
+        if(Strings.isNullOrEmpty(nation))
+            return null;
+        return mapNation.get(nation);
     }
 
     public XSSFSheet getSourceSheetByName(String sheetName){

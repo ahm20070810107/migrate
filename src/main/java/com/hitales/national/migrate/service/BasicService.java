@@ -9,7 +9,7 @@ package com.hitales.national.migrate.service;
  */
 public interface BasicService {
 
-    void verify(String sheetName);
+    boolean verify(String sheetName);
     void importToDb(String sheetName);
 
 }
