@@ -2,6 +2,9 @@ package com.hitales.national.migrate.service;
 
 import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -77,4 +80,13 @@ public class ExcelToolService {
         }
     }
 
+    public Sheet getNewSheet(SXSSFWorkbook workbook, String sheetName, String headerDes, String splitChar){
+        SXSSFSheet sheet = workbook.createSheet(sheetName);
+        String[] headers = headerDes.split(splitChar);
+        Row row = sheet.createRow(0);
+        for(int i = 0; i<headers.length; i++){
+            row.createCell(i).setCellValue(headers[i]);
+        }
+        return sheet;
+    }
 }

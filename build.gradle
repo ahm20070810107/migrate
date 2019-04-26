@@ -31,6 +31,7 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compile 'org.springframework.boot:spring-boot-starter-security'
     compile 'com.hitales:hitales-commons-core:0.2.0-SNAPSHOT'
     compile 'com.alibaba:fastjson:1.2.41'
     compile 'org.apache.httpcomponents:httpclient:4.5.8'

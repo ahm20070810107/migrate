@@ -1,16 +1,12 @@
 package com.hitales.national.migrate.common;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * Created with IntelliJ IDEA
  *
  * @author:huangming
- * @date:2019-04-25
- * @time:13:51
+ * @date:2019-04-26
+ * @time:11:02
  */
 
-@Slf4j
-public class TestCommon {
-
+public class VerifyMethod {
 }
