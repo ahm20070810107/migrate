@@ -46,7 +46,9 @@ public class DoctorService implements BasicService{
 
     @Override
     public boolean importToDb(String sheetName){
-
+        if(!verify(sheetName)){
+            return false;
+        }
         return true;
     }
 

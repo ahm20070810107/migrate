@@ -41,7 +41,7 @@ public class CitizenService implements BasicService {
     @Override
     public boolean verify(String sheetName){
          SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolAndCommonService.MAX_READ_SIZE);
-        boolean verifyResult = verifyCitizen(sheetName,verifyWorkbook);
+         boolean verifyResult = verifyCitizen(sheetName,verifyWorkbook);
 
          excelToolAndCommonService.saveExcelFile(verifyWorkbook, sheetName);
          return verifyResult;
@@ -49,8 +49,14 @@ public class CitizenService implements BasicService {
 
     @Override
     public boolean importToDb(String sheetName){
+
+        if(!verify(sheetName)){
+            return false;
+        }
         return true;
     }
+
+
     private boolean verifyCitizen(String citizenSheet, SXSSFWorkbook verifyWorkbook) {
         int verifyRowCount = 1;
         Set<String> idcardSet = new HashSet<>();
