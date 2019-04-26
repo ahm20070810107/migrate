@@ -41,9 +41,10 @@ public class CommonService {
         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolService.MAX_READ_SIZE);
         Set<String> villageSet = new HashSet<>();
         boolean operatorResult = verifyOperator(operatorSheet, verifyWorkbook);
+        boolean clinicResult = verifyClinic(clinicSheet,villageSet,verifyWorkbook);
 
         excelToolService.saveExcelFile(verifyWorkbook, "公共信息");
-        return operatorResult;
+        return operatorResult && clinicResult;
     }
 
     public void importToDb(String operatorSheet, String clinicSheet,String countySheet, String villageSheet){
@@ -99,12 +100,7 @@ public class CommonService {
             if(count.compareTo(1) > 0){
                 result = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                verifyRow.createCell(0).setCellValue(i +1);
-                verifyRow.createCell(1).setCellValue(clinicName);
-                verifyRow.createCell(2).setCellValue(upClinicName);
-                verifyRow.createCell(3).setCellValue(clinicClass);
-                verifyRow.createCell(4).setCellValue(scopeVillage);
-                verifyRow.createCell(5).setCellValue(sb.toString());
+                fillSheetRow(i+1,verifyRow,clinicName,upClinicName,clinicClass,scopeVillage,sb.toString());
             }
         }
         return result;
@@ -158,14 +154,19 @@ public class CommonService {
             if(count.compareTo(1) > 0){
                 verifyResult = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                verifyRow.createCell(0).setCellValue(i +1);
-                verifyRow.createCell(1).setCellValue(loginName);
-                verifyRow.createCell(2).setCellValue(password);
-                verifyRow.createCell(3).setCellValue(userName);
-                verifyRow.createCell(4).setCellValue(sb.toString());
+                fillSheetRow(i+1,verifyRow,loginName,password,userName,sb.toString());
             }
         }
         return verifyResult;
 
+    }
+
+
+    private void fillSheetRow(int index,Row row, String ... params){
+        int cellIndex = 1;
+        row.createCell(0).setCellValue(index);
+        for(String param : params){
+            row.createCell(cellIndex++).setCellValue(param);
+        }
     }
 }
