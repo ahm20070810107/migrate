@@ -30,8 +30,8 @@ public class CitizenService implements BasicService {
     }
 
     @Override
-    public void importToDb(String sheetName){
-
+    public boolean importToDb(String sheetName){
+        return true;
     }
 
 

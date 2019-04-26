@@ -45,8 +45,9 @@ public class DoctorService implements BasicService{
     }
 
     @Override
-    public void importToDb(String sheetName){
+    public boolean importToDb(String sheetName){
 
+        return true;
     }
 
 
@@ -67,7 +68,7 @@ public class DoctorService implements BasicService{
             String nation = row.getCell(2).getStringCellValue();
             String address = row.getCell(3).getStringCellValue();
             String phone = row.getCell(4).getStringCellValue();
-            String cilinic = row.getCell(5).getStringCellValue();
+            String clinic = row.getCell(5).getStringCellValue();
             StringBuilder sb = new StringBuilder();
             if(Objects.isNull(IdCard.tryParse(idCard))){
                 sb.append(count++).append("、身份证号码为空或格式不正确\r\n");
@@ -91,13 +92,13 @@ public class DoctorService implements BasicService{
             if(Strings.isNullOrEmpty(phone) || Phone.match(phone)){
                 sb.append(count++).append("、电话号码为空或格式不正确\n");
             }
-            if(Strings.isNullOrEmpty(cilinic) || doctorClinicDao.findByName(cilinic).size() < 1){
+            if(Strings.isNullOrEmpty(clinic) || doctorClinicDao.findByName(clinic).size() < 1){
                 sb.append(count++).append("、所属医疗机构为空或在数据库中不存在\r\n");
             }
             if(count.compareTo(1) > 0){
                 result = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                excelToolAndCommonService.fillSheetRow(i+1,verifyRow,idCard,idName,nation,address,phone,cilinic,sb.toString());
+                excelToolAndCommonService.fillSheetRow(i+1,verifyRow,idCard,idName,nation,address,phone,clinic,sb.toString());
             }
         }
         return result;

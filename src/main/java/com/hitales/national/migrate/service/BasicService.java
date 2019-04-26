@@ -10,6 +10,6 @@ package com.hitales.national.migrate.service;
 public interface BasicService {
 
     boolean verify(String sheetName);
-    void importToDb(String sheetName);
+    boolean importToDb(String sheetName);
 
 }
