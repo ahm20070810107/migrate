@@ -87,10 +87,17 @@ public class DoctorService implements BasicService{
                 sb.append(count++).append("、民族为空或所填值不在56个民族中\r\n");
             }
             if(Strings.isNullOrEmpty(address) || address.length() > 100){
-                sb.append(count++).append("、家庭住址为空或长度大于100\n");
+                sb.append(count++).append("、家庭住址为空或长度大于100\r\n");
             }
             if(Strings.isNullOrEmpty(phone) || Phone.match(phone)){
-                sb.append(count++).append("、电话号码为空或格式不正确\n");
+                sb.append(count++).append("、电话号码为空或格式不正确\r\n");
+            }
+            if(phoneSet.contains(phone)){
+                sb.append(count++).append("、电话号码在excel中重复\r\n");
+            }
+            phoneSet.add(phone);
+            if(doctorDao.findByPhone(phone).size() > 0){
+                sb.append(count++).append("、电话号码在数据库中重复\r\n");
             }
             if(Strings.isNullOrEmpty(clinic) || doctorClinicDao.findByName(clinic).size() < 1){
                 sb.append(count++).append("、所属医疗机构为空或在数据库中不存在\r\n");
