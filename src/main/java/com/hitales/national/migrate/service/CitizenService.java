@@ -66,7 +66,7 @@ public class CitizenService implements BasicService {
         }
 
         // 存储入数据库
-        int SAVE_COUNT = 200;
+        int SAVE_COUNT = 500;
         int i = 0;
         for(; (i+1)*SAVE_COUNT <= citizens.size(); i ++){
             citizenDao.saveAll(citizens.subList(i*SAVE_COUNT, (i+1)*SAVE_COUNT));
@@ -104,14 +104,14 @@ public class CitizenService implements BasicService {
         return citizen;
     }
 
-    private CitizenGender getGender(Integer gender){
+    public CitizenGender getGender(Integer gender){
         if(gender.equals(1)){
-           return CitizenGender.MALE;
+            return CitizenGender.MALE;
         }
         if(gender.equals(2)){
             return CitizenGender.FEMALE;
         }
-        return CitizenGender.UNKNOWN;
+        return CitizenGender.NOT_SPECIFIED;
     }
 
     private Long getVillageCode(String villageName){

@@ -1,6 +1,7 @@
 package com.hitales.national.migrate.service;
 
 import com.google.common.base.Strings;
+import com.hitales.national.migrate.enums.CitizenGender;
 import com.hitales.national.migrate.enums.Nation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
@@ -113,4 +114,6 @@ public class ExcelToolAndCommonService {
             row.createCell(cellIndex++).setCellValue(param);
         }
     }
+
+
 }

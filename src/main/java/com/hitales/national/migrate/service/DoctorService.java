@@ -5,6 +5,9 @@ import com.hitales.national.migrate.common.IdCard;
 import com.hitales.national.migrate.common.Phone;
 import com.hitales.national.migrate.dao.DoctorClinicDao;
 import com.hitales.national.migrate.dao.DoctorDao;
+import com.hitales.national.migrate.entity.Doctor;
+import com.hitales.national.migrate.entity.DoctorClinic;
+import com.hitales.national.migrate.enums.DoctorGender;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -13,9 +16,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA
@@ -33,6 +34,8 @@ public class DoctorService implements BasicService{
     @Autowired
     private DoctorDao doctorDao;
 
+    private Map<String,Integer> clinicMap;
+
     @Autowired
     private DoctorClinicDao doctorClinicDao;
 
@@ -49,9 +52,72 @@ public class DoctorService implements BasicService{
         if(!verify(sheetName)){
             return false;
         }
+
+        clinicMap = new HashMap<>();
+
+        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(sheetName);
+        List<Doctor> doctors = sheetToDoctors(1,sourceDataSheet);
+
+        doctorDao.saveAll(doctors);
+
         return true;
     }
 
+
+    private List<Doctor> sheetToDoctors(Integer startRowIndex, Sheet doctorSheet){
+        List<Doctor> doctors = new ArrayList<>();
+        for(int i = startRowIndex; i < doctorSheet.getLastRowNum(); i++) {
+            Row row = doctorSheet.getRow(i);
+            Doctor doctor = new Doctor();
+            doctors.add(doctor);
+            String idCard = row.getCell(0).getStringCellValue();
+            String idName = row.getCell(1).getStringCellValue();
+            String nation = row.getCell(2).getStringCellValue();
+            String address = row.getCell(3).getStringCellValue();
+            String phone = row.getCell(4).getStringCellValue();
+            String clinic = row.getCell(5).getStringCellValue();
+
+            doctor.setIdNo(idCard);
+            doctor.setIdName(idName);
+            IdCard cardInfo = IdCard.tryParse(idCard);
+            if(Objects.isNull(cardInfo)){
+                throw new RuntimeException(String.format("身份证号码【{}】格式错误！",idCard));
+            }
+            doctor.setGender(getDoctorGender(cardInfo.getGender()));
+            doctor.setNation(excelToolAndCommonService.getNation(nation));
+            doctor.setBirthday(cardInfo.getBirthday().toDate());
+            doctor.setAddress(address);
+            doctor.setPhone(phone);
+            doctor.setClinicId(getClinicCode(clinic));
+        }
+
+        return doctors;
+    }
+
+    public DoctorGender getDoctorGender(Integer gender){
+        if(gender.equals(1)){
+            return DoctorGender.MALE;
+        }
+        if(gender.equals(2)){
+            return DoctorGender.FEMALE;
+        }
+        return DoctorGender.NOT_SPECIFIED;
+    }
+    private Integer getClinicCode(String clinic){
+        Integer clinicCode = clinicMap.get(clinic);
+        if(Objects.isNull(clinicCode)){
+            List<DoctorClinic> doctorClinics = doctorClinicDao.findByName(clinic);
+            if(doctorClinics.isEmpty()){
+                throw new RuntimeException(String.format("医疗机构信息[{}]在数据库中不存在！",clinic));
+            }
+            if(doctorClinics.size() > 1){
+                throw new RuntimeException(String.format("医疗机构信息[{}]在数据库中存在{}条",clinic,doctorClinics.size()));
+            }
+            clinicMap.put(clinic,doctorClinics.get(0).getClinicId());
+            return clinicMap.get(clinic);
+        }
+        return clinicCode;
+    }
 
     private boolean verifyDoctor(String doctorSheet, SXSSFWorkbook verifyWorkbook){
         int verifyRowCount = 1;

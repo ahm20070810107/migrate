@@ -19,10 +19,6 @@ import java.util.List;
 @Slf4j
 public class SheetEntityService {
 
-    public List<Doctor> sheetToDoctor(Integer startRowIndex, Sheet doctorSheet){
-        return null;
-    }
-
     public List<County> sheetToCounty(Integer startRowIndex, Sheet countySheet){
         return null;
     }
