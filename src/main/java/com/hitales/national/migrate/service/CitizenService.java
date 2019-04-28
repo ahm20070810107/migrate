@@ -6,6 +6,9 @@ import com.hitales.national.migrate.common.Phone;
 import com.hitales.national.migrate.dao.CitizenDao;
 import com.hitales.national.migrate.dao.GB2260Dao;
 import com.hitales.national.migrate.entity.Citizen;
+import com.hitales.national.migrate.entity.GB2260;
+import com.hitales.national.migrate.enums.CitizenGender;
+import com.hitales.national.migrate.enums.IdType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -50,28 +53,81 @@ public class CitizenService implements BasicService {
 
     @Override
     public boolean importToDb(String sheetName){
-        villageMap = new HashMap<>();
         if(!verify(sheetName)){
             return false;
         }
+        villageMap = new HashMap<>();
+        List<Citizen> citizens = new ArrayList<>();
+        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(sheetName);
+        // 将excel中数据全部取出转换为citizen再统一存储
+        for (int i = 1; i < sourceDataSheet.getLastRowNum(); i++) {
+            Row row = sourceDataSheet.getRow(i);
+            citizens.add(sheetRowToCitizen(row));
+        }
 
-
+        // 存储入数据库
+        int SAVE_COUNT = 200;
+        int i = 0;
+        for(; (i+1)*SAVE_COUNT <= citizens.size(); i ++){
+            citizenDao.saveAll(citizens.subList(i*SAVE_COUNT, (i+1)*SAVE_COUNT));
+        }
+        if(i*SAVE_COUNT != citizens.size()) {
+            citizenDao.saveAll(citizens.subList(i * SAVE_COUNT, citizens.size()));
+        }
         return true;
     }
 
+    private Citizen sheetRowToCitizen(Row citizenRow){
+        Citizen citizen = new Citizen();
+
+        String cardType = citizenRow.getCell(0).getStringCellValue();
+        String idCard = citizenRow.getCell(1).getStringCellValue();
+        String idName = citizenRow.getCell(2).getStringCellValue();
+        String nation = citizenRow.getCell(3).getStringCellValue();
+        String address = citizenRow.getCell(4).getStringCellValue();
+        String phone = citizenRow.getCell(5).getStringCellValue();
+        String village = citizenRow.getCell(6).getStringCellValue();
+
+        citizen.setIdType( cardType.equals(IdType.BIRTH.getDesc())? IdType.BIRTH : IdType.ID);
+        IdCard cardInfo = IdCard.tryParse(idCard);
+        if(Objects.isNull(cardInfo)){
+            throw new RuntimeException(String.format("身份证号码【{}】格式错误！",idCard));
+        }
+        citizen.setIdNo(idCard);
+        citizen.setGender(getGender(cardInfo.getGender()));
+        citizen.setNation(excelToolAndCommonService.getNation(nation));
+        citizen.setBirthday(cardInfo.getBirthday().toDate());
+        citizen.setAddress(address);
+        citizen.setPhone(phone);
+        citizen.setIdName(idName);
+        citizen.setLocation(getVillageCode(village));
+        return citizen;
+    }
+
+    private CitizenGender getGender(Integer gender){
+        if(gender.equals(1)){
+           return CitizenGender.MALE;
+        }
+        if(gender.equals(2)){
+            return CitizenGender.FEMALE;
+        }
+        return CitizenGender.UNKNOWN;
+    }
 
     private Long getVillageCode(String villageName){
         Long villageCode = villageMap.get(villageName);
         if(Objects.isNull(villageCode)){
-
+            List<GB2260> gb2260s = gb2260Dao.findByNameAAndDepth(villageName,6);
+            if(gb2260s.isEmpty()){
+                throw new RuntimeException(String.format("村信息[{}]在数据库中不存在！",villageName));
+            }
+            if(gb2260s.size() > 1){
+                throw new RuntimeException(String.format("村信息[{}]在数据库中存在{}条",villageName,gb2260s.size()));
+            }
+            villageMap.put(villageName,gb2260s.get(0).getCanonicalCode());
+            return villageMap.get(villageName);
         }
         return villageCode;
-    }
-
-
-
-    public Citizen sheetToCitizen(Row citizenRow){
-        return null;
     }
 
 
