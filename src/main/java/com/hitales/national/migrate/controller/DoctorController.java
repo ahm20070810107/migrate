@@ -1,9 +1,8 @@
 package com.hitales.national.migrate.controller;
 
-import com.hitales.national.migrate.service.BasicService;
+import com.hitales.national.migrate.service.DoctorService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,8 +26,7 @@ public class DoctorController {
     private String doctorSheet;
 
     @Autowired
-    @Qualifier("doctorService")
-    private BasicService basicService;
+    private DoctorService doctorService;
 
     private static Object lock = new Object();
 
@@ -45,7 +43,7 @@ public class DoctorController {
         }
 
         try {
-            basicService.verify(doctorSheet);
+            doctorService.verify(doctorSheet);
         } catch (Exception e) {
             log.error(e.getMessage());
         }finally {
@@ -65,7 +63,7 @@ public class DoctorController {
             operateFlag = true;
         }
         try {
-            if(basicService.importToDb(doctorSheet)){
+            if(doctorService.importToDb(doctorSheet)){
                 return "医生信息入库完成！";
             }
         } catch (Exception e) {

@@ -1,9 +1,8 @@
 package com.hitales.national.migrate.controller;
 
-import com.hitales.national.migrate.service.BasicService;
+import com.hitales.national.migrate.service.CitizenService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,9 +25,11 @@ public class CitizenController {
     @Value("${excel.citizenSheet}")
     private String citizenSheet;
 
+    @Value("${excel.countySheet}")
+    private String countySheet;
+
     @Autowired
-    @Qualifier("citizenService")
-    private BasicService basicService;
+    private CitizenService citizenService;
 
     private static Object lock = new Object();
     private static Boolean operateFlag = false;
@@ -43,7 +44,7 @@ public class CitizenController {
             operateFlag = true;
         }
         try {
-            basicService.verify(citizenSheet);
+            citizenService.verify(citizenSheet,countySheet);
         } catch (Exception e) {
             log.error(e.getMessage());
         }finally {
@@ -63,7 +64,7 @@ public class CitizenController {
             operateFlag = true;
         }
         try {
-            if(basicService.importToDb(citizenSheet)){
+            if(citizenService.importToDb(citizenSheet,countySheet)){
                 return "居民信息入库完成！";
             }
         } catch (Exception e) {

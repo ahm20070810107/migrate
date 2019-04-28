@@ -10,6 +10,7 @@ import com.hitales.national.migrate.entity.DoctorClinic;
 import com.hitales.national.migrate.entity.GB2260;
 import com.hitales.national.migrate.entity.Operator;
 import com.hitales.national.migrate.enums.OperatorAccountState;
+import com.hitales.national.migrate.pojo.ClinicPojo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -94,14 +95,9 @@ public class CommonService {
         for(int i = startRowIndex; i < clinicSheet.getLastRowNum(); i++) {
             Row row = clinicSheet.getRow(i);
 
-            String clinicName = row.getCell(0).getStringCellValue();
-            String upClinicName = row.getCell(1).getStringCellValue();
-            String clinicClass = row.getCell(2).getStringCellValue();
-            String scopeVillage = row.getCell(3).getStringCellValue();
-
             DoctorClinic doctorClinic = new DoctorClinic();
             doctorClinics.add(doctorClinic);
-            doctorClinic.setName(clinicName);
+//            doctorClinic.setName(clinicName);
 
 
         }
@@ -283,49 +279,85 @@ public class CommonService {
         return resultVerify;
     }
 
+    private ClinicPojo getClinicPojo(Row row){
+        ClinicPojo pojo = new ClinicPojo();
+        pojo.setClinicName(row.getCell(0).getStringCellValue());
+        pojo.setUpClinicName(row.getCell(1).getStringCellValue());
+        pojo.setClinicClass(row.getCell(2).getStringCellValue());
+        pojo.setScopeVillage(row.getCell(3).getStringCellValue());
+        return pojo;
+    }
     private boolean verifyClinic(String clinicSheet, Set<String> villageSet, SXSSFWorkbook verifyWorkbook){
 
         Set<String> clinicNameSet = new HashSet<>();
+        Set<String> clinicAllNameSet = new HashSet<>();
         XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(clinicSheet);
         boolean result = true;
 
         Sheet verifySheet = excelToolAndCommonService.getNewSheet(verifyWorkbook, clinicSheet, "原始行号,名称,上级医疗机构,级别,管辖自然村,备注",",");
         int verifyRowCount = 1;
-        for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++){
+        List<ClinicPojo> clinicPojos = new ArrayList<>();
+        int countyClassClinicCount = 0;
+        for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++) {
             Row row = sourceDataSheet.getRow(i);
+            ClinicPojo clinicPojo = getClinicPojo(row);
+            clinicPojos.add(clinicPojo);
+            clinicAllNameSet.add(clinicPojo.getClinicName());
+            if("县医疗机构".equals(clinicPojo.getUpClinicName())){
+                countyClassClinicCount ++;
+            }
+        }
+        if(countyClassClinicCount == 0){
+            Row verifyRow = verifySheet.createRow(verifyRowCount++);
+            excelToolAndCommonService.fillSheetRow(0,verifyRow,"","","","","医疗机构中必须存在一条县医疗机构");
+        }
+        if(countyClassClinicCount > 1){
+            Row verifyRow = verifySheet.createRow(verifyRowCount++);
+            excelToolAndCommonService.fillSheetRow(0,verifyRow,"","","","","医疗机构中只能存在一条县医疗机构");
+        }
+
+        for(int i = 0; i < clinicPojos.size(); i++){
+            ClinicPojo clinicPojo = clinicPojos.get(i);
             Integer count = 1;
             StringBuilder sb = new StringBuilder();
 
-            String clinicName = row.getCell(0).getStringCellValue();
-            String upClinicName = row.getCell(1).getStringCellValue();
-            String clinicClass = row.getCell(2).getStringCellValue();
-            String scopeVillage = row.getCell(3).getStringCellValue();
 
-            if(Strings.isNullOrEmpty(clinicName) || Strings.isNullOrEmpty(clinicClass) || Strings.isNullOrEmpty(scopeVillage)){
+            if(Strings.isNullOrEmpty(clinicPojo.getClinicName()) || Strings.isNullOrEmpty(clinicPojo.getClinicClass()) || Strings.isNullOrEmpty(clinicPojo.getScopeVillage())){
                 sb.append(count++).append("、名称,级别,管辖自然村均不能为空！\r\n");
             }
-            if(clinicNameSet.contains(clinicName)){
+            if(clinicNameSet.contains(clinicPojo.getClinicName())){
                 sb.append(count++).append("、名称在excel中有重复\r\n");
             }
-            clinicNameSet.add(clinicName);
-            if(doctorClinicDao.findByName(clinicName).size() > 0){
-                sb.append(count++).append("、名称在数据库中有重复\r\n");
-            }
-            if(!Strings.isNullOrEmpty(clinicName) && clinicName.length() > 20){
+            clinicNameSet.add(clinicPojo.getClinicName());
+//            if(doctorClinicDao.findByName(clinicPojo.getClinicName()).size() > 0){
+//                sb.append(count++).append("、名称在数据库中有重复\r\n");
+//            }
+
+            if(!Strings.isNullOrEmpty(clinicPojo.getClinicName()) && clinicPojo.getClinicName().length() > 20){
                 sb.append(count++).append("、名称的长度不能超过20\r\n");
             }
-            if(doctorClinicDao.findByName(upClinicName).size() < 0 && !clinicNameSet.contains(upClinicName) ){
-                sb.append(count++).append("、上级医疗机构在数据库以及excel中均不存在\r\n");
+            if(!"县医疗机构".equals(clinicPojo.getClinicClass()) && Strings.isNullOrEmpty(clinicPojo.getUpClinicName())){
+                sb.append(count++).append("、非县医疗机构的上级医疗机构不能为空\r\n");
             }
-            String[] villages = scopeVillage.split("[;；]");
-            String villageResult = checkVillage(villageSet, villages);
-            if(!Strings.isNullOrEmpty(villageResult)) {
-                sb.append(count++).append("、").append(villageResult).append("在自然村中不存在\r\n");
+
+            if(!Strings.isNullOrEmpty(clinicPojo.getUpClinicName()) && !clinicAllNameSet.contains(clinicPojo.getUpClinicName()) ){
+                sb.append(count++).append("、上级医疗机构在excel中均不存在\r\n");
+            }
+            if("卫生室".equals(clinicPojo.getClinicClass())) {
+                if(Strings.isNullOrEmpty(clinicPojo.getScopeVillage())){
+                   sb.append(count++).append("、级别为卫生室，但管辖自然村为空\r\n");
+                }else {
+                    String[] villages = clinicPojo.getScopeVillage().split("[;；]");
+                    String villageResult = checkVillage(villageSet, villages);
+                    if (!Strings.isNullOrEmpty(villageResult)) {
+                        sb.append(count++).append("、").append(villageResult).append("在自然村中不存在\r\n");
+                    }
+                }
             }
             if(count.compareTo(1) > 0){
                 result = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                excelToolAndCommonService.fillSheetRow(i+1,verifyRow,clinicName,upClinicName,clinicClass,scopeVillage,sb.toString());
+                excelToolAndCommonService.fillSheetRow(i+2,verifyRow,clinicPojo.getClinicName(),clinicPojo.getUpClinicName(),clinicPojo.getClinicClass(),clinicPojo.getScopeVillage(),sb.toString());
             }
         }
         return result;
