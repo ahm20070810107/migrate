@@ -27,7 +27,7 @@ import java.util.*;
  */
 @Service
 @Slf4j
-public class DoctorService implements BasicService{
+public class DoctorService{
     @Autowired
     private ExcelToolAndCommonService excelToolAndCommonService;
 
@@ -39,7 +39,6 @@ public class DoctorService implements BasicService{
     @Autowired
     private DoctorClinicDao doctorClinicDao;
 
-    @Override
     public boolean verify(String sheetName){
         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolAndCommonService.MAX_READ_SIZE);
         boolean verifyResult = verifyDoctor(sheetName,verifyWorkbook);
@@ -47,7 +46,6 @@ public class DoctorService implements BasicService{
         return verifyResult;
     }
 
-    @Override
     public boolean importToDb(String sheetName){
         if(!verify(sheetName)){
             return false;

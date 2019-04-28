@@ -1,7 +1,6 @@
 package com.hitales.national.migrate.service;
 
 import com.google.common.base.Strings;
-import com.hitales.national.migrate.enums.CitizenGender;
 import com.hitales.national.migrate.enums.Nation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
@@ -115,5 +114,13 @@ public class ExcelToolAndCommonService {
         }
     }
 
+    public String getCountyPrefix(String countySheet){
+        Sheet sheet = getSourceSheetByName(countySheet);
+        String code = sheet.getRow(1).getCell(2).getStringCellValue();
+        if(!Objects.isNull(code) && code.length() > 6){
+            return code.substring(0,6);
+        }
+        return Objects.isNull(code)?"": code;
+    }
 
 }

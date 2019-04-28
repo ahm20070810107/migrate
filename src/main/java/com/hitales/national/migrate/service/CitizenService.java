@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA
@@ -29,7 +30,7 @@ import java.util.*;
 
 @Service
 @Slf4j
-public class CitizenService implements BasicService {
+public class CitizenService {
 
     @Autowired
     private ExcelToolAndCommonService excelToolAndCommonService;
@@ -42,27 +43,26 @@ public class CitizenService implements BasicService {
 
     private Map<String,Long> villageMap;
 
-    @Override
-    public boolean verify(String sheetName){
+    public boolean verify(String citizenSheet,String countySheet){
          SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolAndCommonService.MAX_READ_SIZE);
-         boolean verifyResult = verifyCitizen(sheetName,verifyWorkbook);
+         boolean verifyResult = verifyCitizen(citizenSheet,countySheet,verifyWorkbook);
 
-         excelToolAndCommonService.saveExcelFile(verifyWorkbook, sheetName);
+         excelToolAndCommonService.saveExcelFile(verifyWorkbook, citizenSheet);
          return verifyResult;
     }
 
-    @Override
-    public boolean importToDb(String sheetName){
-        if(!verify(sheetName)){
+    public boolean importToDb(String citizenSheet,String countySheet){
+        if(!verify(citizenSheet,countySheet)){
             return false;
         }
+        String countyPrefix = excelToolAndCommonService.getCountyPrefix(countySheet);
         villageMap = new HashMap<>();
         List<Citizen> citizens = new ArrayList<>();
-        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(sheetName);
+        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(citizenSheet);
         // 将excel中数据全部取出转换为citizen再统一存储
         for (int i = 1; i < sourceDataSheet.getLastRowNum(); i++) {
             Row row = sourceDataSheet.getRow(i);
-            citizens.add(sheetRowToCitizen(row));
+            citizens.add(sheetRowToCitizen(row, countyPrefix));
         }
 
         // 存储入数据库
@@ -77,7 +77,9 @@ public class CitizenService implements BasicService {
         return true;
     }
 
-    private Citizen sheetRowToCitizen(Row citizenRow){
+
+
+    private Citizen sheetRowToCitizen(Row citizenRow, String countyPrefix){
         Citizen citizen = new Citizen();
 
         String cardType = citizenRow.getCell(0).getStringCellValue();
@@ -100,7 +102,7 @@ public class CitizenService implements BasicService {
         citizen.setAddress(address);
         citizen.setPhone(phone);
         citizen.setIdName(idName);
-        citizen.setLocation(getVillageCode(village));
+        citizen.setLocation(getVillageCode(village, countyPrefix));
         return citizen;
     }
 
@@ -114,10 +116,10 @@ public class CitizenService implements BasicService {
         return CitizenGender.NOT_SPECIFIED;
     }
 
-    private Long getVillageCode(String villageName){
+    private Long getVillageCode(String villageName, String countyPrefix){
         Long villageCode = villageMap.get(villageName);
         if(Objects.isNull(villageCode)){
-            List<GB2260> gb2260s = gb2260Dao.findByNameAndDepth(villageName,6);
+            List<GB2260> gb2260s = gb2260Dao.findByNameAndDepth(villageName,6).stream().filter(value-> value.getCanonicalCode().toString().startsWith(countyPrefix)).collect(Collectors.toList());
             if(gb2260s.isEmpty()){
                 throw new RuntimeException(String.format("村信息[%s]在数据库中不存在！",villageName));
             }
@@ -131,11 +133,11 @@ public class CitizenService implements BasicService {
     }
 
 
-    private boolean verifyCitizen(String citizenSheet, SXSSFWorkbook verifyWorkbook) {
+    private boolean verifyCitizen(String citizenSheet, String countySheet, SXSSFWorkbook verifyWorkbook) {
         int verifyRowCount = 1;
         Set<String> idcardSet = new HashSet<>();
         boolean result = true;
-
+        String countyPrefix = excelToolAndCommonService.getCountyPrefix(countySheet);
         XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(citizenSheet);
 
         Sheet verifySheet = excelToolAndCommonService.getNewSheet(verifyWorkbook, citizenSheet, "原始行号,证件类型,证件号码,证件姓名,民族,家庭住址,本人电话,所属自然村,备注", ",");
@@ -176,7 +178,8 @@ public class CitizenService implements BasicService {
             if(Strings.isNullOrEmpty(address) || address.length() > 200){
                 sb.append(count++).append("、家庭住址为空或长度大于200\r\n");
             }
-            if(Strings.isNullOrEmpty(village) || gb2260Dao.findByNameAndDepth(village, 6).size() < 1){
+            List<GB2260> gb2260s = gb2260Dao.findByNameAndDepth(village, 6).stream().filter(value-> value.getCanonicalCode().toString().startsWith(countyPrefix)).collect(Collectors.toList());
+            if(Strings.isNullOrEmpty(village) || gb2260s.size() < 1){
                 sb.append(count++).append("、所属自然村为空或在数据库中不存在\r\n");
             }
 
