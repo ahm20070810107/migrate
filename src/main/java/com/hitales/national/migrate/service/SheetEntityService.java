@@ -21,9 +21,7 @@ import java.util.List;
 public class SheetEntityService {
 
 
-    public List<GB2260> sheetToVillage(Integer startRowIndex, Sheet villageSheet){
-        return null;
-    }
+
 
     public List<DoctorClinic> sheetToClinic(Integer startRowIndex, Sheet clinicSheet){
         return null;

@@ -6,6 +6,7 @@ import com.hitales.national.migrate.dao.DoctorClinicDao;
 import com.hitales.national.migrate.dao.GB2260Dao;
 import com.hitales.national.migrate.dao.OperatorDao;
 import com.hitales.national.migrate.entity.County;
+import com.hitales.national.migrate.entity.GB2260;
 import com.hitales.national.migrate.entity.Operator;
 import com.hitales.national.migrate.enums.OperatorAccountState;
 import lombok.extern.slf4j.Slf4j;
@@ -69,12 +70,53 @@ public class CommonService {
         XSSFSheet countyDataSheet = excelToolAndCommonService.getSourceSheetByName(countySheet);
         List<County> counties = sheetToCounties(1,countyDataSheet);
 
+        XSSFSheet villageDataSheet = excelToolAndCommonService.getSourceSheetByName(villageSheet);
+        List<GB2260> gb2260s = sheetToVillage(1,villageDataSheet);
+
+
 
         operatorDao.saveAll(operators);
         countyDao.saveAll(counties);
+        gb2260Dao.saveAll(gb2260s);
         return true;
     }
-    public List<County> sheetToCounties(Integer startRowIndex, Sheet countySheet){
+
+
+
+    public List<GB2260> sheetToVillage(Integer startRowIndex, Sheet villageSheet){
+
+        Map<Long,Long> canonicalCodeMap = new HashMap<>();
+        List<GB2260> gb2260s = new ArrayList<>();
+        for(int i = startRowIndex; i < villageSheet.getLastRowNum(); i++) {
+            Row row = villageSheet.getRow(i);
+            String villageName = row.getCell(0).getStringCellValue();
+            String govVillageCode = row.getCell(1).getStringCellValue();
+            Long govVillageCodeL = Long.parseLong(govVillageCode);
+            GB2260 gb2260 = new GB2260();
+            gb2260s.add(gb2260);
+            gb2260.setDepth(6);
+            gb2260.setCanonicalCode(getVillageCanonicalCode(govVillageCodeL,canonicalCodeMap));
+            gb2260.setName(villageName);
+        }
+        return gb2260s;
+    }
+    private Long getVillageCanonicalCode(Long canonicalCode,Map<Long,Long> canonicalCodeMap){
+        Long lastCanonicalCode = canonicalCodeMap.get(canonicalCode);
+        if(!Objects.isNull(lastCanonicalCode)){
+            canonicalCodeMap.put(canonicalCode,lastCanonicalCode +1);
+            return canonicalCodeMap.get(canonicalCode);
+        }
+        for (int i = 1; i < 999; i++) {
+            Long currentCanonicalCode = canonicalCode + i;
+            List<GB2260> gb2260s = gb2260Dao.findByCanonicalCode(currentCanonicalCode);
+            if(gb2260s.isEmpty()){
+               canonicalCodeMap.put(canonicalCode,currentCanonicalCode);
+               return currentCanonicalCode;
+            }
+        }
+        throw new RuntimeException(String.format("找不到合适的自然村编码，因为{}的容量已经超过999",canonicalCode));
+    }
+    private List<County> sheetToCounties(Integer startRowIndex, Sheet countySheet){
         List<County> counties = new ArrayList<>();
         for(int i = startRowIndex; i < countySheet.getLastRowNum(); i++) {
             Row row = countySheet.getRow(i);
