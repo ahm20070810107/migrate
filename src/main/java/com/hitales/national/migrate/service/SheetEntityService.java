@@ -1,6 +1,7 @@
 package com.hitales.national.migrate.service;
 
-import com.hitales.national.migrate.entity.*;
+import com.hitales.national.migrate.entity.DoctorClinic;
+import com.hitales.national.migrate.entity.GB2260;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.springframework.stereotype.Component;
@@ -19,9 +20,6 @@ import java.util.List;
 @Slf4j
 public class SheetEntityService {
 
-    public List<County> sheetToCounty(Integer startRowIndex, Sheet countySheet){
-        return null;
-    }
 
     public List<GB2260> sheetToVillage(Integer startRowIndex, Sheet villageSheet){
         return null;
@@ -31,8 +29,6 @@ public class SheetEntityService {
         return null;
     }
 
-    public List<Operator> sheetToOperator(Integer startRowIndex, Sheet operatorSheet){
-        return null;
-    }
+
 
 }

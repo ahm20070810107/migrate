@@ -5,6 +5,9 @@ import com.hitales.national.migrate.dao.CountyDao;
 import com.hitales.national.migrate.dao.DoctorClinicDao;
 import com.hitales.national.migrate.dao.GB2260Dao;
 import com.hitales.national.migrate.dao.OperatorDao;
+import com.hitales.national.migrate.entity.County;
+import com.hitales.national.migrate.entity.Operator;
+import com.hitales.national.migrate.enums.OperatorAccountState;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -14,9 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA
@@ -62,9 +63,51 @@ public class CommonService {
         if(!verify(operatorSheet,clinicSheet,countySheet,villageSheet)){
             return false;
         }
+        XSSFSheet operatorDataSheet = excelToolAndCommonService.getSourceSheetByName(operatorSheet);
+        List<Operator> operators = sheetToOperators(1,operatorDataSheet);
 
+        XSSFSheet countyDataSheet = excelToolAndCommonService.getSourceSheetByName(countySheet);
+        List<County> counties = sheetToCounties(1,countyDataSheet);
+
+
+        operatorDao.saveAll(operators);
+        countyDao.saveAll(counties);
         return true;
     }
+    public List<County> sheetToCounties(Integer startRowIndex, Sheet countySheet){
+        List<County> counties = new ArrayList<>();
+        for(int i = startRowIndex; i < countySheet.getLastRowNum(); i++) {
+            Row row = countySheet.getRow(i);
+            String countyName = row.getCell(0).getStringCellValue();
+            String countyPrefix = row.getCell(1).getStringCellValue();
+            String govCountyCode = row.getCell(2).getStringCellValue();
+            County county = new County();
+            counties.add(county);
+            county.setDomainPrefix(countyPrefix);
+            county.setLocation(Long.parseLong(govCountyCode));
+            county.setName(countyName);
+
+        }
+        return counties;
+    }
+    private List<Operator> sheetToOperators(Integer startRowIndex, Sheet operatorSheet){
+        List<Operator> operators = new ArrayList<>();
+        for(int i = startRowIndex; i < operatorSheet.getLastRowNum(); i++) {
+            Row row = operatorSheet.getRow(i);
+            String loginName = row.getCell(0).getStringCellValue();
+            String password = row.getCell(1).getStringCellValue();
+            String userName = row.getCell(2).getStringCellValue();
+
+            Operator operator = new Operator();
+            operators.add(operator);
+            operator.setAccountState(OperatorAccountState.AVAILABLE);
+            operator.setUsername(loginName);
+            operator.setIdName(userName);
+            operator.setPassword(passEncoder.encode(password));
+        }
+        return operators;
+    }
+
 
     private boolean verifyCounty(String countySheet, SXSSFWorkbook verifyWorkbook){
         boolean verifyResult = true;
