@@ -13,7 +13,7 @@ public interface GB2260Dao extends JpaRepository<GB2260, Long>, JpaSpecification
 
    List<GB2260> findByCanonicalCode(Long canonicalCode);
 
-   List<GB2260> findByNameAAndDepth(String name, Integer depth);
+   List<GB2260> findByNameAndDepth(String name, Integer depth);
 
    List<GB2260> findByNameAndCanonicalCode(String name, Long canonicalCode);
 

@@ -42,6 +42,8 @@ public class CommonService {
     @Autowired
     private CountyDao countyDao;
 
+    private String countyPrefix;
+
     @Autowired
     private PasswordEncoder passEncoder;
 
@@ -53,10 +55,12 @@ public class CommonService {
         }
         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolAndCommonService.MAX_READ_SIZE);
         Set<String> villageSet = new HashSet<>();
+        countyPrefix = "";
+        boolean countyResult = verifyCounty(countySheet, verifyWorkbook);
         boolean operatorResult = verifyOperator(operatorSheet, verifyWorkbook);
         boolean villageResult = verifyVillage(villageSheet,villageSet,verifyWorkbook);
         boolean clinicResult = verifyClinic(clinicSheet,villageSet,verifyWorkbook);
-        boolean countyResult = verifyCounty(countySheet, verifyWorkbook);
+
         excelToolAndCommonService.saveExcelFile(verifyWorkbook, "公共信息");
         return operatorResult && clinicResult && villageResult && countyResult;
     }
@@ -79,8 +83,8 @@ public class CommonService {
 
         operatorDao.saveAll(operators);
         countyDao.saveAll(counties);
-        doctorClinicDao.saveAll(doctorClinics);
         gb2260Dao.saveAll(gb2260s);
+        doctorClinicDao.saveAll(doctorClinics);
         return true;
     }
 
@@ -94,6 +98,10 @@ public class CommonService {
             String upClinicName = row.getCell(1).getStringCellValue();
             String clinicClass = row.getCell(2).getStringCellValue();
             String scopeVillage = row.getCell(3).getStringCellValue();
+
+            DoctorClinic doctorClinic = new DoctorClinic();
+            doctorClinics.add(doctorClinic);
+            doctorClinic.setName(clinicName);
 
 
         }
@@ -149,6 +157,8 @@ public class CommonService {
         }
         return counties;
     }
+
+
     private List<Operator> sheetToOperators(Integer startRowIndex, Sheet operatorSheet){
         List<Operator> operators = new ArrayList<>();
         for(int i = startRowIndex; i < operatorSheet.getLastRowNum(); i++) {
@@ -174,7 +184,11 @@ public class CommonService {
         XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(countySheet);
         int verifyRowCount = 1;
         Sheet verifySheet = excelToolAndCommonService.getNewSheet(verifyWorkbook, countySheet, "原始行号,名称,域名前缀,对应县行政区划编码,备注",",");
-
+        if(sourceDataSheet.getLastRowNum() > 2){
+            Row verifyRow = verifySheet.createRow(verifyRowCount++);
+            excelToolAndCommonService.fillSheetRow(0, verifyRow, "", "", "","行政县中只能填写一条记录");
+            return false;
+        }
         for(int i = headIndex +1; i < sourceDataSheet.getLastRowNum(); i++) {
 
             StringBuilder sb = new StringBuilder();
@@ -193,8 +207,12 @@ public class CommonService {
                 } catch (NumberFormatException e) {
                     sb.append(count++).append("、行政区划编码必须是15位数字\r\n");
                 }
-                if(!Objects.isNull(govCountLong) && gb2260Dao.findByNameAndCanonicalCode(countyName,govCountLong).size() < 1){
-                    sb.append(count++).append("、行政区划编码及对应名称在标准数据库中不存在\r\n");
+                if(!Objects.isNull(govCountLong)) {
+                    if (gb2260Dao.findByNameAndCanonicalCode(countyName, govCountLong).size() < 1) {
+                        sb.append(count++).append("、行政区划编码及对应名称在标准数据库中不存在\r\n");
+                    }else {
+                        countyPrefix = govCountyCode.substring(0,6);
+                    }
                 }
                 if(!Objects.isNull(govCountLong) && countyDao.findByNameAndLocation(countyName, govCountLong).size() > 0){
                     sb.append(count++).append("、行政区划编码及对应名称在数据库中已存在");
@@ -240,12 +258,16 @@ public class CommonService {
                 } catch (NumberFormatException e) {
                     sb.append(count++).append("、所属行政村编码必须是15位数字\r\n");
                 }
+                if(!Objects.isNull(govVillageCodeL) && !govVillageCode.startsWith(countyPrefix)){
+                    sb.append(count++).append(String.format("、所属行政村编码不属于行政县，其编码不为%s开头",countyPrefix));
+                }
                 if(!Objects.isNull(govVillageCodeL) && gb2260Dao.findByCanonicalCodeAndDepth(govVillageCodeL, 5).size() < 1){
                     sb.append(count++).append("、所属行政村编码在数据库中不存在或不为行政村级别\r\n");
                 }
                 if(!Objects.isNull(govVillageCodeL) && gb2260Dao.findByNameAndCanonicalCode(villageName,govVillageCodeL).size() > 0){
                     sb.append(count++).append("、自然村名称在数据库相同行政村编码中有重复\r\n");
                 }
+
             }
             if(villageSet.contains(villageName)){
                 sb.append(count++).append("、自然村名称在excel中有重复\r\n");

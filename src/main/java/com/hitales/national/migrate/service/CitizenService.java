@@ -117,7 +117,7 @@ public class CitizenService implements BasicService {
     private Long getVillageCode(String villageName){
         Long villageCode = villageMap.get(villageName);
         if(Objects.isNull(villageCode)){
-            List<GB2260> gb2260s = gb2260Dao.findByNameAAndDepth(villageName,6);
+            List<GB2260> gb2260s = gb2260Dao.findByNameAndDepth(villageName,6);
             if(gb2260s.isEmpty()){
                 throw new RuntimeException(String.format("村信息[%s]在数据库中不存在！",villageName));
             }
@@ -176,7 +176,7 @@ public class CitizenService implements BasicService {
             if(Strings.isNullOrEmpty(address) || address.length() > 200){
                 sb.append(count++).append("、家庭住址为空或长度大于200\r\n");
             }
-            if(Strings.isNullOrEmpty(village) || gb2260Dao.findByNameAAndDepth(village, 6).size() < 1){
+            if(Strings.isNullOrEmpty(village) || gb2260Dao.findByNameAndDepth(village, 6).size() < 1){
                 sb.append(count++).append("、所属自然村为空或在数据库中不存在\r\n");
             }
 
