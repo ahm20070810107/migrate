@@ -14,9 +14,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA
@@ -39,6 +37,8 @@ public class CitizenService implements BasicService {
     @Autowired
     private GB2260Dao gb2260Dao;
 
+    private Map<String,Long> villageMap;
+
     @Override
     public boolean verify(String sheetName){
          SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolAndCommonService.MAX_READ_SIZE);
@@ -50,15 +50,22 @@ public class CitizenService implements BasicService {
 
     @Override
     public boolean importToDb(String sheetName){
-
+        villageMap = new HashMap<>();
         if(!verify(sheetName)){
             return false;
         }
 
 
-
-
         return true;
+    }
+
+
+    private Long getVillageCode(String villageName){
+        Long villageCode = villageMap.get(villageName);
+        if(Objects.isNull(villageCode)){
+
+        }
+        return villageCode;
     }
 
 
