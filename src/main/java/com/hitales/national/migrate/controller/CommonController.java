@@ -72,7 +72,9 @@ public class CommonController {
             operateFlag = true;
         }
         try {
-            commonService.importToDb(operatorSheet, clinicSheet, countySheet, villageSheet);
+            if(commonService.importToDb(operatorSheet, clinicSheet, countySheet, villageSheet)){
+                return "公共信息入库完成！";
+            }
         } catch (Exception e) {
             log.error(e.getMessage());
         } finally {
@@ -80,7 +82,7 @@ public class CommonController {
                 operateFlag = false;
             }
         }
-        return "公共信息入库完成！";
+        return "公共信息入库未完成，请查看日志！";
     }
 
 }

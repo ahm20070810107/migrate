@@ -63,7 +63,9 @@ public class CitizenController {
             operateFlag = true;
         }
         try {
-            basicService.importToDb(citizenSheet);
+            if(basicService.importToDb(citizenSheet)){
+                return "居民信息入库完成！";
+            }
         } catch (Exception e) {
             log.error(e.getMessage());
         } finally {
@@ -71,7 +73,7 @@ public class CitizenController {
                 operateFlag = false;
             }
         }
-        return "居民信息入库完成！";
+        return "居民信息入库未完成，请查看日志！";
     }
 
 }

@@ -65,7 +65,9 @@ public class DoctorController {
             operateFlag = true;
         }
         try {
-            basicService.importToDb(doctorSheet);
+            if(basicService.importToDb(doctorSheet)){
+                return "医生信息入库完成！";
+            }
         } catch (Exception e) {
             log.error(e.getMessage());
         } finally {
@@ -73,7 +75,7 @@ public class DoctorController {
                 operateFlag = false;
             }
         }
-        return "医生信息入库完成！";
+        return "医生信息入库未完成，请查看日志！";
     }
 
 }
