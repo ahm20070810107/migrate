@@ -81,7 +81,7 @@ public class DoctorService implements BasicService{
             doctor.setIdName(idName);
             IdCard cardInfo = IdCard.tryParse(idCard);
             if(Objects.isNull(cardInfo)){
-                throw new RuntimeException(String.format("身份证号码【{}】格式错误！",idCard));
+                throw new RuntimeException(String.format("身份证号码【%s】格式错误！",idCard));
             }
             doctor.setGender(getDoctorGender(cardInfo.getGender()));
             doctor.setNation(excelToolAndCommonService.getNation(nation));
@@ -94,7 +94,7 @@ public class DoctorService implements BasicService{
         return doctors;
     }
 
-    public DoctorGender getDoctorGender(Integer gender){
+    private DoctorGender getDoctorGender(Integer gender){
         if(gender.equals(1)){
             return DoctorGender.MALE;
         }
@@ -108,10 +108,10 @@ public class DoctorService implements BasicService{
         if(Objects.isNull(clinicCode)){
             List<DoctorClinic> doctorClinics = doctorClinicDao.findByName(clinic);
             if(doctorClinics.isEmpty()){
-                throw new RuntimeException(String.format("医疗机构信息[{}]在数据库中不存在！",clinic));
+                throw new RuntimeException(String.format("医疗机构信息[%s]在数据库中不存在！",clinic));
             }
             if(doctorClinics.size() > 1){
-                throw new RuntimeException(String.format("医疗机构信息[{}]在数据库中存在{}条",clinic,doctorClinics.size()));
+                throw new RuntimeException(String.format("医疗机构信息[%s]在数据库中存在%s条",clinic,doctorClinics.size()));
             }
             clinicMap.put(clinic,doctorClinics.get(0).getClinicId());
             return clinicMap.get(clinic);

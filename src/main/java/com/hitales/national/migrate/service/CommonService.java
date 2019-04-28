@@ -6,6 +6,7 @@ import com.hitales.national.migrate.dao.DoctorClinicDao;
 import com.hitales.national.migrate.dao.GB2260Dao;
 import com.hitales.national.migrate.dao.OperatorDao;
 import com.hitales.national.migrate.entity.County;
+import com.hitales.national.migrate.entity.DoctorClinic;
 import com.hitales.national.migrate.entity.GB2260;
 import com.hitales.national.migrate.entity.Operator;
 import com.hitales.national.migrate.enums.OperatorAccountState;
@@ -73,17 +74,33 @@ public class CommonService {
         XSSFSheet villageDataSheet = excelToolAndCommonService.getSourceSheetByName(villageSheet);
         List<GB2260> gb2260s = sheetToVillage(1,villageDataSheet);
 
-
+        XSSFSheet clinicDataSheet = excelToolAndCommonService.getSourceSheetByName(clinicSheet);
+        List<DoctorClinic> doctorClinics = sheetToClinic(1,clinicDataSheet);
 
         operatorDao.saveAll(operators);
         countyDao.saveAll(counties);
+        doctorClinicDao.saveAll(doctorClinics);
         gb2260Dao.saveAll(gb2260s);
         return true;
     }
 
+    //TODO
+    private List<DoctorClinic> sheetToClinic(Integer startRowIndex, Sheet clinicSheet){
+        List<DoctorClinic> doctorClinics = new ArrayList<>();
+        for(int i = startRowIndex; i < clinicSheet.getLastRowNum(); i++) {
+            Row row = clinicSheet.getRow(i);
+
+            String clinicName = row.getCell(0).getStringCellValue();
+            String upClinicName = row.getCell(1).getStringCellValue();
+            String clinicClass = row.getCell(2).getStringCellValue();
+            String scopeVillage = row.getCell(3).getStringCellValue();
 
 
-    public List<GB2260> sheetToVillage(Integer startRowIndex, Sheet villageSheet){
+        }
+        return doctorClinics;
+    }
+
+    private List<GB2260> sheetToVillage(Integer startRowIndex, Sheet villageSheet){
 
         Map<Long,Long> canonicalCodeMap = new HashMap<>();
         List<GB2260> gb2260s = new ArrayList<>();
@@ -100,7 +117,7 @@ public class CommonService {
         }
         return gb2260s;
     }
-    private Long getVillageCanonicalCode(Long canonicalCode,Map<Long,Long> canonicalCodeMap){
+    private Long getVillageCanonicalCode(Long canonicalCode,Map<Long,Long> canonicalCodeMap) throws RuntimeException {
         Long lastCanonicalCode = canonicalCodeMap.get(canonicalCode);
         if(!Objects.isNull(lastCanonicalCode)){
             canonicalCodeMap.put(canonicalCode,lastCanonicalCode +1);
@@ -114,7 +131,7 @@ public class CommonService {
                return currentCanonicalCode;
             }
         }
-        throw new RuntimeException(String.format("找不到合适的自然村编码，因为{}的容量已经超过999",canonicalCode));
+        throw new RuntimeException(String.format("找不到合适的自然村编码，因为%s的容量已经超过999",canonicalCode));
     }
     private List<County> sheetToCounties(Integer startRowIndex, Sheet countySheet){
         List<County> counties = new ArrayList<>();
@@ -278,7 +295,7 @@ public class CommonService {
             if(doctorClinicDao.findByName(upClinicName).size() < 0 && !clinicNameSet.contains(upClinicName) ){
                 sb.append(count++).append("、上级医疗机构在数据库以及excel中均不存在\r\n");
             }
-            String[] villages = scopeVillage.split(";|；");
+            String[] villages = scopeVillage.split("[;；]");
             String villageResult = checkVillage(villageSet, villages);
             if(!Strings.isNullOrEmpty(villageResult)) {
                 sb.append(count++).append("、").append(villageResult).append("在自然村中不存在\r\n");
@@ -293,16 +310,16 @@ public class CommonService {
     }
 
     private String checkVillage(Set<String> villageSet,String[] villages){
-        String result = "";
+        StringBuilder result = new StringBuilder();
         for(String village : villages){
             if(!villageSet.contains(village)){
-                result += village + "、";
+                result.append(village).append("、");
             }
         }
        if(result.length() > 1){
            return result.substring(0,result.length() - 1);
        }
-       return result;
+       return result.toString();
     }
     private boolean verifyOperator(String operatorSheet, SXSSFWorkbook verifyWorkbook){
         boolean verifyResult = true;

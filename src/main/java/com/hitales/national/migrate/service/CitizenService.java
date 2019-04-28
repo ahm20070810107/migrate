@@ -91,7 +91,7 @@ public class CitizenService implements BasicService {
         citizen.setIdType( cardType.equals(IdType.BIRTH.getDesc())? IdType.BIRTH : IdType.ID);
         IdCard cardInfo = IdCard.tryParse(idCard);
         if(Objects.isNull(cardInfo)){
-            throw new RuntimeException(String.format("身份证号码【{}】格式错误！",idCard));
+            throw new RuntimeException(String.format("身份证号码【%s】格式错误！",idCard));
         }
         citizen.setIdNo(idCard);
         citizen.setGender(getGender(cardInfo.getGender()));
@@ -119,10 +119,10 @@ public class CitizenService implements BasicService {
         if(Objects.isNull(villageCode)){
             List<GB2260> gb2260s = gb2260Dao.findByNameAAndDepth(villageName,6);
             if(gb2260s.isEmpty()){
-                throw new RuntimeException(String.format("村信息[{}]在数据库中不存在！",villageName));
+                throw new RuntimeException(String.format("村信息[%s]在数据库中不存在！",villageName));
             }
             if(gb2260s.size() > 1){
-                throw new RuntimeException(String.format("村信息[{}]在数据库中存在{}条",villageName,gb2260s.size()));
+                throw new RuntimeException(String.format("村信息[%s]在数据库中存在%s条",villageName,gb2260s.size()));
             }
             villageMap.put(villageName,gb2260s.get(0).getCanonicalCode());
             return villageMap.get(villageName);
