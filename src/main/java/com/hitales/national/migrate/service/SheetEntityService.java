@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
  * Created with IntelliJ IDEA
  *
@@ -17,28 +19,23 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class SheetEntityService {
 
-
-    public Citizen sheetToCitizen(Sheet citizenSheet){
+    public List<Doctor> sheetToDoctor(Integer startRowIndex, Sheet doctorSheet){
         return null;
     }
 
-    public Doctor sheetToDoctor(Sheet doctorSheet){
+    public List<County> sheetToCounty(Integer startRowIndex, Sheet countySheet){
         return null;
     }
 
-    public County sheetToCounty(Sheet countySheet){
+    public List<GB2260> sheetToVillage(Integer startRowIndex, Sheet villageSheet){
         return null;
     }
 
-    public GB2260 sheetToVillage(Sheet villageSheet){
+    public List<DoctorClinic> sheetToClinic(Integer startRowIndex, Sheet clinicSheet){
         return null;
     }
 
-    public DoctorClinic sheetToClinic(Sheet clinicSheet){
-        return null;
-    }
-
-    public Operator sheetToOperator(Sheet operatorSheet){
+    public List<Operator> sheetToOperator(Integer startRowIndex, Sheet operatorSheet){
         return null;
     }
 

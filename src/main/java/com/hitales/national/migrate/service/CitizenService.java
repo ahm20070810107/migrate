@@ -5,6 +5,7 @@ import com.hitales.national.migrate.common.IdCard;
 import com.hitales.national.migrate.common.Phone;
 import com.hitales.national.migrate.dao.CitizenDao;
 import com.hitales.national.migrate.dao.GB2260Dao;
+import com.hitales.national.migrate.entity.Citizen;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -53,7 +54,17 @@ public class CitizenService implements BasicService {
         if(!verify(sheetName)){
             return false;
         }
+
+
+
+
         return true;
+    }
+
+
+
+    public Citizen sheetToCitizen(Row citizenRow){
+        return null;
     }
 
 
@@ -111,7 +122,6 @@ public class CitizenService implements BasicService {
                 result = false;
                 excelToolAndCommonService.fillSheetRow(i+1,verifyRow,idCard,idName,nation,address,phone,village,sb.toString());
             }
-
         }
         return result;
     }
