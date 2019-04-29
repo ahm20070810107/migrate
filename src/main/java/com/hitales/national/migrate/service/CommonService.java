@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA
@@ -47,6 +48,8 @@ public class CommonService {
 
     @Autowired
     private PasswordEncoder passEncoder;
+
+    private Integer START_COUNTY_CLINIC_CODE = 100;
 
     int headIndex = 0;
 
@@ -91,17 +94,114 @@ public class CommonService {
 
     //TODO
     private List<DoctorClinic> sheetToClinic(Integer startRowIndex, Sheet clinicSheet){
-        List<DoctorClinic> doctorClinics = new ArrayList<>();
+        List<ClinicPojo> doctorClinicPojos = new ArrayList<>();
         for(int i = startRowIndex; i < clinicSheet.getLastRowNum(); i++) {
             Row row = clinicSheet.getRow(i);
-
-            DoctorClinic doctorClinic = new DoctorClinic();
-            doctorClinics.add(doctorClinic);
-//            doctorClinic.setName(clinicName);
-
-
+            doctorClinicPojos.add(getClinicPojo(row));
         }
+        List<DoctorClinic> doctorClinics = new ArrayList<>();
+        fillClinicInfo(doctorClinicPojos, doctorClinics);
         return doctorClinics;
+    }
+
+    private void fillClinicInfo(List<ClinicPojo> clinicPojos, List<DoctorClinic> doctorClinics){
+         Long countyCode = Long.parseLong(countyPrefix) * 1000000000;
+         Optional<County> countyOptional = countyDao.findByLocation(countyCode);
+         if(!countyOptional.isPresent()){
+             throw new RuntimeException(String.format("数据库中对应县编码%s不存在",countyCode.toString()));
+         }
+         County county = countyOptional.get();
+
+         Integer countyClinicId = getCountyClinicId();
+
+         // 县级医疗机构
+        List<ClinicPojo> countyClinics = clinicPojos.stream().filter(value -> "县医疗机构".equals(value.getClinicClass())).collect(Collectors.toList());
+
+        // 卫生院
+        List<ClinicPojo> centerClinics = clinicPojos.stream().filter(value->"卫生院".equals(value.getClinicClass())).collect(Collectors.toList());
+
+        // 卫生室
+        List<ClinicPojo> clinics = centerClinics.stream().filter(value-> "卫生室".equals(value.getClinicClass())).collect(Collectors.toList());
+
+        // 添加县级
+        doctorClinics.add(fillClinic(countyClinics.get(0),county.getId(),null,0,0,countyClinicId,centerClinics.size()));
+
+        // 添加卫生院
+        int count = 1;
+        Map<String,Integer> centerClinicMap = new HashMap<>();
+        for(ClinicPojo pojo: centerClinics){
+            Integer id = countyClinicId*1000 + count;
+            centerClinicMap.put(pojo.getClinicName(),id);
+            List<ClinicPojo> childClinics = clinics.stream().filter(value-> pojo.getClinicName().equals(value.getUpClinicName())).collect(Collectors.toList());
+            doctorClinics.add(fillClinic(pojo,county.getId(),null,countyClinicId,1,id,childClinics.size()));
+            count++;
+        }
+
+        //添加卫生室
+        Map<String,Integer> clinicMap = new HashMap<>();
+        for (ClinicPojo pojo: clinics){
+           Integer centerCountyId = centerClinicMap.get(pojo.getUpClinicName());
+           Integer id = getClinicId(clinicMap,centerCountyId,pojo);
+           doctorClinics.add(fillClinic(pojo,county.getId(),getScopeVillage(pojo.getScopeVillage()),centerCountyId,2,id,0));
+        }
+
+    }
+
+    private List<Long> getScopeVillage(String village){
+        List<Long> scopes = new ArrayList<>();
+        String[] villages = village.split("[;；]");
+
+        for (String v :villages){
+           scopes.add(getVillageCode(v,countyPrefix));
+        }
+        return scopes;
+    }
+
+
+    private Long getVillageCode(String villageName, String countyPrefix){
+        List<GB2260> gb2260s = gb2260Dao.findByNameAndDepth(villageName,6).stream().filter(value-> value.getCanonicalCode().toString().startsWith(countyPrefix)).collect(Collectors.toList());
+        if(gb2260s.size() > 1){
+            throw new RuntimeException(String.format("村信息[%s]在数据库中存在%s条",villageName,gb2260s.size()));
+        }
+        if(gb2260s.isEmpty()){
+            throw new RuntimeException(String.format("村信息[%s]在数据库中不存在！",villageName));
+        }
+
+        return gb2260s.get(0).getCanonicalCode();
+    }
+
+    private Integer getClinicId(Map<String,Integer> clinicMap,Integer centerCountyId,ClinicPojo pojo){
+         Integer id = clinicMap.get(pojo.getUpClinicName());
+         if(!Objects.isNull(id)){
+             clinicMap.put(pojo.getUpClinicName(),id +1);
+             return clinicMap.get(pojo.getUpClinicName());
+         }else{
+             clinicMap.put(pojo.getUpClinicName(),centerCountyId*1000 +1);
+             return clinicMap.get(pojo.getUpClinicName());
+         }
+    }
+
+    private Integer getCountyClinicId(){
+        for (int i = 0; i < 999; i++) {
+            Integer id = START_COUNTY_CLINIC_CODE +i;
+            List<DoctorClinic> clinics = doctorClinicDao.findByClinicIdAndDepth(id,0);
+            if(clinics.isEmpty()){
+                return id;
+            }
+        }
+        throw new RuntimeException(String.format("获取县医疗机构失败，从%s到999都在使用中", START_COUNTY_CLINIC_CODE.toString()));
+    }
+
+    private DoctorClinic fillClinic(ClinicPojo clinicPojo ,Long countyId,List<Long> scope, Integer parentId, Integer depth, Integer clinicId, Integer childSize ){
+        DoctorClinic doctorClinic = new DoctorClinic();
+        doctorClinic.setName(clinicPojo.getClinicName());
+        doctorClinic.setChildSize(childSize);
+        doctorClinic.setCountyId(countyId);
+        doctorClinic.setScope(scope);
+        doctorClinic.setClinicId(clinicId);
+        doctorClinic.setParentId(parentId);
+        doctorClinic.setDepth(depth);
+        return doctorClinic;
     }
 
     private List<GB2260> sheetToVillage(Integer startRowIndex, Sheet villageSheet){
