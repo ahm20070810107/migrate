@@ -16,6 +16,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 public class CitizenService {
 
     @Autowired
-    private ExcelToolAndCommonService excelToolAndCommonService;
+    private CommonToolsService commonToolsService;
 
     @Autowired
     private CitizenDao citizenDao;
@@ -44,23 +45,24 @@ public class CitizenService {
     private Map<String,Long> villageMap;
 
     public boolean verify(String citizenSheet,String countySheet){
-         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolAndCommonService.MAX_READ_SIZE);
+         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(CommonToolsService.MAX_READ_SIZE);
          boolean verifyResult = verifyCitizen(citizenSheet,countySheet,verifyWorkbook);
 
-         excelToolAndCommonService.saveExcelFile(verifyWorkbook, citizenSheet);
+         commonToolsService.saveExcelFile(verifyWorkbook, citizenSheet);
          return verifyResult;
     }
 
+    @Transactional
     public boolean importToDb(String citizenSheet,String countySheet){
         if(!verify(citizenSheet,countySheet)){
             return false;
         }
-        String countyPrefix = excelToolAndCommonService.getCountyPrefix(countySheet);
+        String countyPrefix = commonToolsService.getCountyPrefix(countySheet);
         villageMap = new HashMap<>();
         List<Citizen> citizens = new ArrayList<>();
-        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(citizenSheet);
+        XSSFSheet sourceDataSheet = commonToolsService.getSourceSheetByName(citizenSheet);
         // 将excel中数据全部取出转换为citizen再统一存储
-        for (int i = 1; i < sourceDataSheet.getLastRowNum(); i++) {
+        for (int i = 1; i <= sourceDataSheet.getLastRowNum(); i++) {
             Row row = sourceDataSheet.getRow(i);
             citizens.add(sheetRowToCitizen(row, countyPrefix));
         }
@@ -83,11 +85,11 @@ public class CitizenService {
         Citizen citizen = new Citizen();
 
         String cardType = citizenRow.getCell(0).getStringCellValue();
-        String idCard = citizenRow.getCell(1).getStringCellValue();
+        String idCard = CommonToolsService.getCellValue(citizenRow.getCell(1));
         String idName = citizenRow.getCell(2).getStringCellValue();
         String nation = citizenRow.getCell(3).getStringCellValue();
         String address = citizenRow.getCell(4).getStringCellValue();
-        String phone = citizenRow.getCell(5).getStringCellValue();
+        String phone = CommonToolsService.getCellValue(citizenRow.getCell(5));
         String village = citizenRow.getCell(6).getStringCellValue();
 
         citizen.setIdType( cardType.equals(IdType.BIRTH.getDesc())? IdType.BIRTH : IdType.ID);
@@ -97,7 +99,7 @@ public class CitizenService {
         }
         citizen.setIdNo(idCard);
         citizen.setGender(getGender(cardInfo.getGender()));
-        citizen.setNation(excelToolAndCommonService.getNation(nation));
+        citizen.setNation(commonToolsService.getNation(nation));
         citizen.setBirthday(cardInfo.getBirthday().toDate());
         citizen.setAddress(address);
         citizen.setPhone(phone);
@@ -137,12 +139,12 @@ public class CitizenService {
         int verifyRowCount = 1;
         Set<String> idcardSet = new HashSet<>();
         boolean result = true;
-        String countyPrefix = excelToolAndCommonService.getCountyPrefix(countySheet);
-        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(citizenSheet);
+        String countyPrefix = commonToolsService.getCountyPrefix(countySheet);
+        XSSFSheet sourceDataSheet = commonToolsService.getSourceSheetByName(citizenSheet);
 
-        Sheet verifySheet = excelToolAndCommonService.getNewSheet(verifyWorkbook, citizenSheet, "原始行号,证件类型,证件号码,证件姓名,民族,家庭住址,本人电话,所属自然村,备注", ",");
+        Sheet verifySheet = commonToolsService.getNewSheet(verifyWorkbook, citizenSheet, "原始行号,证件类型,证件号码,证件姓名,民族,家庭住址,本人电话,所属自然村,备注", ",");
 
-        for (int i = 1; i < sourceDataSheet.getLastRowNum(); i++) {
+        for (int i = 1; i <= sourceDataSheet.getLastRowNum(); i++) {
             Row row = sourceDataSheet.getRow(i);
             Integer count = 1;
             String cardType = row.getCell(0).getStringCellValue();
@@ -150,7 +152,7 @@ public class CitizenService {
             String idName = row.getCell(2).getStringCellValue();
             String nation = row.getCell(3).getStringCellValue();
             String address = row.getCell(4).getStringCellValue();
-            String phone = row.getCell(5).getStringCellValue();
+            String phone = CommonToolsService.getCellValue(row.getCell(5));
             String village = row.getCell(6).getStringCellValue();
             StringBuilder sb = new StringBuilder();
             if(!"身份证".equals(cardType) && !"出生证明".equals(cardType)){
@@ -169,10 +171,10 @@ public class CitizenService {
                 sb.append(count++).append("、身份证姓名为空或长度大于30\r\n");
             }
             idcardSet.add(idCard);
-            if(Strings.isNullOrEmpty(nation) || Objects.isNull(excelToolAndCommonService.getNation(nation))){
+            if(Strings.isNullOrEmpty(nation) || Objects.isNull(commonToolsService.getNation(nation))){
                 sb.append(count++).append("、民族为空或所填值不在56个民族中\r\n");
             }
-            if(Strings.isNullOrEmpty(phone) || Phone.match(phone)){
+            if(Strings.isNullOrEmpty(phone) || !Phone.match(phone)){
                 sb.append(count++).append("、电话号码为空或格式不正确\r\n");
             }
             if(Strings.isNullOrEmpty(address) || address.length() > 200){
@@ -186,7 +188,7 @@ public class CitizenService {
             if(count.compareTo(1) > 0){
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
                 result = false;
-                excelToolAndCommonService.fillSheetRow(i+1,verifyRow,idCard,idName,nation,address,phone,village,sb.toString());
+                commonToolsService.fillSheetRow(i+1,verifyRow,cardType,idCard,idName,nation,address,phone,village,sb.toString());
             }
         }
         return result;

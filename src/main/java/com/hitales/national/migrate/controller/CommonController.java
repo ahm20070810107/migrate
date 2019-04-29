@@ -53,9 +53,7 @@ public class CommonController {
 
         try {
             commonService.verify(operatorSheet, clinicSheet, countySheet, villageSheet);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }finally {
+        } finally {
             synchronized (lock){
                 operateFlag = false;
             }
@@ -75,9 +73,7 @@ public class CommonController {
             if(commonService.importToDb(operatorSheet, clinicSheet, countySheet, villageSheet)){
                 return "公共信息入库完成！";
             }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        } finally {
+        }  finally {
             synchronized (lock){
                 operateFlag = false;
             }

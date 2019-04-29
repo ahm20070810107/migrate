@@ -29,7 +29,7 @@ import java.util.*;
 @Slf4j
 public class DoctorService{
     @Autowired
-    private ExcelToolAndCommonService excelToolAndCommonService;
+    private CommonToolsService commonToolsService;
 
     @Autowired
     private DoctorDao doctorDao;
@@ -40,9 +40,9 @@ public class DoctorService{
     private DoctorClinicDao doctorClinicDao;
 
     public boolean verify(String sheetName){
-        SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(ExcelToolAndCommonService.MAX_READ_SIZE);
+        SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(CommonToolsService.MAX_READ_SIZE);
         boolean verifyResult = verifyDoctor(sheetName,verifyWorkbook);
-        excelToolAndCommonService.saveExcelFile(verifyWorkbook, sheetName);
+        commonToolsService.saveExcelFile(verifyWorkbook, sheetName);
         return verifyResult;
     }
 
@@ -53,7 +53,7 @@ public class DoctorService{
 
         clinicMap = new HashMap<>();
 
-        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(sheetName);
+        XSSFSheet sourceDataSheet = commonToolsService.getSourceSheetByName(sheetName);
         List<Doctor> doctors = sheetToDoctors(1,sourceDataSheet);
 
         doctorDao.saveAll(doctors);
@@ -64,7 +64,7 @@ public class DoctorService{
 
     private List<Doctor> sheetToDoctors(Integer startRowIndex, Sheet doctorSheet){
         List<Doctor> doctors = new ArrayList<>();
-        for(int i = startRowIndex; i < doctorSheet.getLastRowNum(); i++) {
+        for(int i = startRowIndex; i <= doctorSheet.getLastRowNum(); i++) {
             Row row = doctorSheet.getRow(i);
             Doctor doctor = new Doctor();
             doctors.add(doctor);
@@ -82,7 +82,7 @@ public class DoctorService{
                 throw new RuntimeException(String.format("身份证号码【%s】格式错误！",idCard));
             }
             doctor.setGender(getDoctorGender(cardInfo.getGender()));
-            doctor.setNation(excelToolAndCommonService.getNation(nation));
+            doctor.setNation(commonToolsService.getNation(nation));
             doctor.setBirthday(cardInfo.getBirthday().toDate());
             doctor.setAddress(address);
             doctor.setPhone(phone);
@@ -122,11 +122,11 @@ public class DoctorService{
         boolean result = true;
         Set<String> idcardSet = new HashSet<>();
         Set<String> phoneSet = new HashSet<>();
-        XSSFSheet sourceDataSheet = excelToolAndCommonService.getSourceSheetByName(doctorSheet);
+        XSSFSheet sourceDataSheet = commonToolsService.getSourceSheetByName(doctorSheet);
 
-        Sheet verifySheet = excelToolAndCommonService.getNewSheet(verifyWorkbook, doctorSheet, "原始行号,身份证号,身份证姓名,民族,家庭住址,手机号,所属医疗机构,备注",",");
+        Sheet verifySheet = commonToolsService.getNewSheet(verifyWorkbook, doctorSheet, "原始行号,身份证号,身份证姓名,民族,家庭住址,手机号,所属医疗机构,备注",",");
 
-        for(int i = 1; i < sourceDataSheet.getLastRowNum(); i++) {
+        for(int i = 1; i <= sourceDataSheet.getLastRowNum(); i++) {
             Row row = sourceDataSheet.getRow(i);
             Integer count = 1;
             String idCard = row.getCell(0).getStringCellValue();
@@ -149,7 +149,7 @@ public class DoctorService{
             if(Strings.isNullOrEmpty(idName) || idName.length() > 35){
                 sb.append(count++).append("、身份证姓名为空或长度大于35\r\n");
             }
-            if(Strings.isNullOrEmpty(nation) || Objects.isNull(excelToolAndCommonService.getNation(nation))){
+            if(Strings.isNullOrEmpty(nation) || Objects.isNull(commonToolsService.getNation(nation))){
                 sb.append(count++).append("、民族为空或所填值不在56个民族中\r\n");
             }
             if(Strings.isNullOrEmpty(address) || address.length() > 100){
@@ -171,7 +171,7 @@ public class DoctorService{
             if(count.compareTo(1) > 0){
                 result = false;
                 Row verifyRow = verifySheet.createRow(verifyRowCount++);
-                excelToolAndCommonService.fillSheetRow(i+1,verifyRow,idCard,idName,nation,address,phone,clinic,sb.toString());
+                commonToolsService.fillSheetRow(i+1,verifyRow,idCard,idName,nation,address,phone,clinic,sb.toString());
             }
         }
         return result;

@@ -45,8 +45,6 @@ public class CitizenController {
         }
         try {
             citizenService.verify(citizenSheet,countySheet);
-        } catch (Exception e) {
-            log.error(e.getMessage());
         }finally {
             synchronized (lock){
                 operateFlag = false;
@@ -67,8 +65,6 @@ public class CitizenController {
             if(citizenService.importToDb(citizenSheet,countySheet)){
                 return "居民信息入库完成！";
             }
-        } catch (Exception e) {
-            log.error(e.getMessage());
         } finally {
             synchronized (lock){
                 operateFlag = false;

@@ -44,8 +44,6 @@ public class DoctorController {
 
         try {
             doctorService.verify(doctorSheet);
-        } catch (Exception e) {
-            log.error(e.getMessage());
         }finally {
             synchronized (lock){
                 operateFlag = false;
@@ -66,8 +64,6 @@ public class DoctorController {
             if(doctorService.importToDb(doctorSheet)){
                 return "医生信息入库完成！";
             }
-        } catch (Exception e) {
-            log.error(e.getMessage());
         } finally {
             synchronized (lock){
                 operateFlag = false;
