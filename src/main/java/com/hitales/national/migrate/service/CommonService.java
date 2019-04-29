@@ -45,7 +45,7 @@ public class CommonService {
     @Autowired
     private CountyDao countyDao;
 
-    private String countyPrefix;
+    private String countyCodePrefix;
 
     @Autowired
     private PasswordEncoder passEncoder;
@@ -60,7 +60,7 @@ public class CommonService {
         }
         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(CommonToolsService.MAX_READ_SIZE);
         Set<String> villageSet = new HashSet<>();
-        countyPrefix = "";
+        countyCodePrefix = "";
         boolean countyResult = verifyCounty(countySheet, verifyWorkbook);
         boolean operatorResult = verifyOperator(operatorSheet, verifyWorkbook);
         boolean villageResult = verifyVillage(villageSheet,villageSet,verifyWorkbook);
@@ -75,14 +75,14 @@ public class CommonService {
         if(!verify(operatorSheet,clinicSheet,countySheet,villageSheet)){
             return false;
         }
+        XSSFSheet countyDataSheet = commonToolsService.getSourceSheetByName(countySheet);
+        List<County> counties = sheetToCounties(1,countyDataSheet);
+        countyDao.saveAll(counties);
+
         XSSFSheet operatorDataSheet = commonToolsService.getSourceSheetByName(operatorSheet);
         List<Operator> operators = sheetToOperators(1,operatorDataSheet);
         operatorDao.saveAll(operators);
 
-
-        XSSFSheet countyDataSheet = commonToolsService.getSourceSheetByName(countySheet);
-        List<County> counties = sheetToCounties(1,countyDataSheet);
-        countyDao.saveAll(counties);
 
 
         XSSFSheet villageDataSheet = commonToolsService.getSourceSheetByName(villageSheet);
@@ -107,13 +107,17 @@ public class CommonService {
         return doctorClinics;
     }
 
+    private Long getCountyId(){
+        Long countyCode = Long.parseLong(countyCodePrefix) * 1000000000;
+        Optional<County> countyOptional = countyDao.findByLocation(countyCode);
+        if(!countyOptional.isPresent()){
+            throw new RuntimeException(String.format("数据库中对应县编码%s不存在",countyCode.toString()));
+        }
+        return countyOptional.get().getId();
+    }
+
     private void fillClinicInfo(List<ClinicPojo> clinicPojos, List<DoctorClinic> doctorClinics){
-         Long countyCode = Long.parseLong(countyPrefix) * 1000000000;
-         Optional<County> countyOptional = countyDao.findByLocation(countyCode);
-         if(!countyOptional.isPresent()){
-             throw new RuntimeException(String.format("数据库中对应县编码%s不存在",countyCode.toString()));
-         }
-         County county = countyOptional.get();
+         Long countyId = getCountyId();
 
          Integer countyClinicId = getCountyClinicId();
 
@@ -124,10 +128,10 @@ public class CommonService {
         List<ClinicPojo> centerClinics = clinicPojos.stream().filter(value->"卫生院".equals(value.getClinicClass())).collect(Collectors.toList());
 
         // 卫生室
-        List<ClinicPojo> clinics = centerClinics.stream().filter(value-> "卫生室".equals(value.getClinicClass())).collect(Collectors.toList());
+        List<ClinicPojo> clinics = clinicPojos.stream().filter(value-> "卫生室".equals(value.getClinicClass())).collect(Collectors.toList());
 
         // 添加县级
-        doctorClinics.add(fillClinic(countyClinics.get(0),county.getId(),null,0,0,countyClinicId,centerClinics.size()));
+        doctorClinics.add(fillClinic(countyClinics.get(0),countyId,null,0,0,countyClinicId,centerClinics.size()));
 
         // 添加卫生院
         int count = 1;
@@ -136,7 +140,7 @@ public class CommonService {
             Integer id = countyClinicId*1000 + count;
             centerClinicMap.put(pojo.getClinicName(),id);
             List<ClinicPojo> childClinics = clinics.stream().filter(value-> pojo.getClinicName().equals(value.getUpClinicName())).collect(Collectors.toList());
-            doctorClinics.add(fillClinic(pojo,county.getId(),null,countyClinicId,1,id,childClinics.size()));
+            doctorClinics.add(fillClinic(pojo,countyId,null,countyClinicId,1,id,childClinics.size()));
             count++;
         }
 
@@ -145,7 +149,7 @@ public class CommonService {
         for (ClinicPojo pojo: clinics){
            Integer centerCountyId = centerClinicMap.get(pojo.getUpClinicName());
            Integer id = getClinicId(clinicMap,centerCountyId,pojo);
-           doctorClinics.add(fillClinic(pojo,county.getId(),getScopeVillage(pojo.getScopeVillage()),centerCountyId,2,id,0));
+           doctorClinics.add(fillClinic(pojo,countyId,getScopeVillage(pojo.getScopeVillage()),centerCountyId,2,id,0));
         }
 
     }
@@ -155,7 +159,7 @@ public class CommonService {
         String[] villages = village.split("[;；]");
 
         for (String v :villages){
-           scopes.add(getVillageCode(v,countyPrefix));
+           scopes.add(getVillageCode(v, countyCodePrefix));
         }
         return scopes;
     }
@@ -214,7 +218,7 @@ public class CommonService {
         for(int i = startRowIndex; i <= villageSheet.getLastRowNum(); i++) {
             Row row = villageSheet.getRow(i);
             String villageName = row.getCell(0).getStringCellValue();
-            String govVillageCode = row.getCell(1).getStringCellValue();
+            String govVillageCode = CommonToolsService.getCellValue(row.getCell(1));
             Long govVillageCodeL = Long.parseLong(govVillageCode);
             GB2260 gb2260 = new GB2260();
             gb2260s.add(gb2260);
@@ -260,6 +264,7 @@ public class CommonService {
 
     private List<Operator> sheetToOperators(Integer startRowIndex, Sheet operatorSheet){
         List<Operator> operators = new ArrayList<>();
+        Long countId = getCountyId();
         for(int i = startRowIndex; i <= operatorSheet.getLastRowNum(); i++) {
             Row row = operatorSheet.getRow(i);
             String loginName = row.getCell(0).getStringCellValue();
@@ -271,6 +276,7 @@ public class CommonService {
             operator.setAccountState(OperatorAccountState.AVAILABLE);
             operator.setUsername(loginName);
             operator.setIdName(userName);
+            operator.setCountyId(countId);
             operator.setPassword(passEncoder.encode(password));
         }
         return operators;
@@ -310,7 +316,7 @@ public class CommonService {
                     if (gb2260Dao.findByNameAndCanonicalCode(countyName, govCountLong).size() < 1) {
                         sb.append(count++).append("、行政区划编码及对应名称在标准数据库中不存在\r\n");
                     }else {
-                        countyPrefix = govCountyCode.substring(0,6);
+                        countyCodePrefix = govCountyCode.substring(0,6);
                     }
                 }
                 if(!Objects.isNull(govCountLong) && countyDao.findByNameAndLocation(countyName, govCountLong).size() > 0){
@@ -357,8 +363,8 @@ public class CommonService {
                 } catch (NumberFormatException e) {
                     sb.append(count++).append("、所属行政村编码必须是15位数字\r\n");
                 }
-                if(!Objects.isNull(govVillageCodeL) && !govVillageCode.startsWith(countyPrefix)){
-                    sb.append(count++).append(String.format("、所属行政村编码不属于行政县，其编码不为%s开头",countyPrefix));
+                if(!Objects.isNull(govVillageCodeL) && !govVillageCode.startsWith(countyCodePrefix)){
+                    sb.append(count++).append(String.format("、所属行政村编码不属于行政县，其编码不为%s开头", countyCodePrefix));
                 }
                 if(!Objects.isNull(govVillageCodeL) && gb2260Dao.findByCanonicalCodeAndDepth(govVillageCodeL, 5).size() < 1){
                     sb.append(count++).append("、所属行政村编码在数据库中不存在或不为行政村级别\r\n");
