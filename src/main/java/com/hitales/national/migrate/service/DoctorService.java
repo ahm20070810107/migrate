@@ -72,7 +72,7 @@ public class DoctorService{
             String idName = row.getCell(1).getStringCellValue();
             String nation = row.getCell(2).getStringCellValue();
             String address = row.getCell(3).getStringCellValue();
-            String phone = row.getCell(4).getStringCellValue();
+            String phone = CommonToolsService.getCellValue(row.getCell(4));
             String clinic = row.getCell(5).getStringCellValue();
 
             doctor.setIdNo(idCard);
@@ -133,7 +133,7 @@ public class DoctorService{
             String idName = row.getCell(1).getStringCellValue();
             String nation = row.getCell(2).getStringCellValue();
             String address = row.getCell(3).getStringCellValue();
-            String phone = row.getCell(4).getStringCellValue();
+            String phone = CommonToolsService.getCellValue(row.getCell(4));
             String clinic = row.getCell(5).getStringCellValue();
             StringBuilder sb = new StringBuilder();
             if(Objects.isNull(IdCard.tryParse(idCard))){
@@ -155,7 +155,7 @@ public class DoctorService{
             if(Strings.isNullOrEmpty(address) || address.length() > 100){
                 sb.append(count++).append("、家庭住址为空或长度大于100\r\n");
             }
-            if(Strings.isNullOrEmpty(phone) || Phone.match(phone)){
+            if(Strings.isNullOrEmpty(phone) || !Phone.match(phone)){
                 sb.append(count++).append("、电话号码为空或格式不正确\r\n");
             }
             if(phoneSet.contains(phone)){
