@@ -125,6 +125,9 @@ public class CommonToolsService {
     public void saveExcelFile(SXSSFWorkbook sxssfWorkbook, String saveType){
         String savePath = verifyResultFile + "_" + saveType +".xlsx";
         File file = new File(savePath);
+        if(!file.getParentFile().exists()){
+            file.getParentFile().mkdirs();
+        }
         if(file.exists()) {
             if(!file.delete()){
                 throw new RuntimeException(String.format("旧校验结果【%s】删除失败，不能写入新校验结果！",savePath));
