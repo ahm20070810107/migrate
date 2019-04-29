@@ -75,19 +75,20 @@ public class CommonService {
         }
         XSSFSheet operatorDataSheet = excelToolAndCommonService.getSourceSheetByName(operatorSheet);
         List<Operator> operators = sheetToOperators(1,operatorDataSheet);
+        operatorDao.saveAll(operators);
+
 
         XSSFSheet countyDataSheet = excelToolAndCommonService.getSourceSheetByName(countySheet);
         List<County> counties = sheetToCounties(1,countyDataSheet);
+        countyDao.saveAll(counties);
+
 
         XSSFSheet villageDataSheet = excelToolAndCommonService.getSourceSheetByName(villageSheet);
         List<GB2260> gb2260s = sheetToVillage(1,villageDataSheet);
+        gb2260Dao.saveAll(gb2260s);
 
         XSSFSheet clinicDataSheet = excelToolAndCommonService.getSourceSheetByName(clinicSheet);
         List<DoctorClinic> doctorClinics = sheetToClinic(1,clinicDataSheet);
-
-        operatorDao.saveAll(operators);
-        countyDao.saveAll(counties);
-        gb2260Dao.saveAll(gb2260s);
         doctorClinicDao.saveAll(doctorClinics);
         return true;
     }
