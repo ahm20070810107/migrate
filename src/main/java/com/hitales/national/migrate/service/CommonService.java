@@ -191,7 +191,7 @@ public class CommonService {
     private Integer getCountyClinicId(){
         for (int i = 0; i < 999; i++) {
             Integer id = START_COUNTY_CLINIC_CODE +i;
-            List<DoctorClinic> clinics = doctorClinicDao.findByClinicIdAndDepth(id,0);
+            List<DoctorClinic> clinics = doctorClinicDao.findByClinicId(id);
             if(clinics.isEmpty()){
                 return id;
             }
