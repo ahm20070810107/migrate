@@ -40,16 +40,16 @@ public class Citizen extends AuditableEntity implements CopyPartially {
     private String idName;
 
     @Column(name = "id_state", columnDefinition = "tinyint(2) unsigned default 0 comment '身份状态:1-有效身份;2-临时身份'")
-    private IdState idState;
+    private IdState idState = IdState.AVAILABLE;
 
     @Column(name = "birth_image", columnDefinition = "varchar(150) default '' comment '出生证明图片'")
     private String birthImage;
 
     @Column(name = "audit_state", columnDefinition = "tinyint(2) unsigned default 1 comment '审核状态:1-待审核;2-审核通过;3-审核拒绝;'")
-    private CitizenAuditState auditState;
+    private CitizenAuditState auditState = CitizenAuditState.APPROVED;
 
     @Column(name = "gender", columnDefinition = "tinyint(2) unsigned default 0 comment '性别:0-未知;1-男;2-女;9-未说明'")
-    private CitizenGender gender;
+    private CitizenGender gender = CitizenGender.UNKNOWN;
 
     @Column(name = "birthday", columnDefinition = "date comment '出生日期'")
     private Date birthday;
