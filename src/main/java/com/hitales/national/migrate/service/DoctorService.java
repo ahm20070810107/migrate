@@ -14,6 +14,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -38,6 +39,9 @@ public class DoctorService{
 
     @Autowired
     private DoctorClinicDao doctorClinicDao;
+
+    @Autowired
+    private PasswordEncoder passEncoder;
 
     public boolean verify(String sheetName){
         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(CommonToolsService.MAX_READ_SIZE);
@@ -86,6 +90,7 @@ public class DoctorService{
             doctor.setBirthday(cardInfo.getBirthday().toDate());
             doctor.setAddress(address);
             doctor.setPhone(phone);
+            doctor.setPassword(passEncoder.encode("123456"));
             doctor.setClinicId(getClinicCode(clinic));
         }
 

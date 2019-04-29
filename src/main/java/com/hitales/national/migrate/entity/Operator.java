@@ -40,7 +40,7 @@ public class Operator extends AuditableEntity {
     private String password;
 
     @Column(name = "account_state", columnDefinition = "tinyint(1) unsigned default 1 comment '账户状态:1-启用;2-临时停用'")
-    private OperatorAccountState accountState;
+    private OperatorAccountState accountState ;
 
     @Column(name = "county_id", columnDefinition = "bigint(20) unsigned  comment '行政县区id'")
     private Long countyId;
