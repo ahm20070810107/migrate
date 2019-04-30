@@ -13,7 +13,7 @@ import java.util.List;
  * @time:11:44
  */
 public interface DoctorClinicDao extends JpaRepository<DoctorClinic, Long>{
-    List<DoctorClinic> findByName(String name);
+    List<DoctorClinic> findByNameAndCountyId(String name, Long countyId);
 
     List<DoctorClinic> findByClinicId(Integer clinicId);
 }

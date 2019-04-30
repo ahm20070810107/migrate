@@ -25,6 +25,9 @@ public class DoctorController {
     @Value("${excel.doctorSheet}")
     private String doctorSheet;
 
+    @Value("${excel.countySheet}")
+    private String countySheet;
+
     @Autowired
     private DoctorService doctorService;
 
@@ -43,7 +46,7 @@ public class DoctorController {
         }
 
         try {
-            doctorService.verify(doctorSheet);
+            doctorService.verify(doctorSheet, countySheet);
         }finally {
             synchronized (lock){
                 operateFlag = false;
@@ -61,7 +64,7 @@ public class DoctorController {
             operateFlag = true;
         }
         try {
-            if(doctorService.importToDb(doctorSheet)){
+            if(doctorService.importToDb(doctorSheet, countySheet)){
                 return "医生信息入库完成！";
             }
         } finally {
