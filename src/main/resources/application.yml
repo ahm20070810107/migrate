@@ -8,8 +8,8 @@ security:
 
 excel:
   path: /data/hitales/
-  sourceFile: ${excel.path}全民健康3.0数据初始化模板.xlsx
-  verifyResultFile: ${excel.path}全民健康3.0数据校验结果
+  sourceFile: ${excel.path}全民健康3.0数据初始化模板.xlsx #数据文件
+  verifyResultFile: ${excel.path}全民健康3.0数据校验结果 #校验结果文件前缀
   citizenSheet: 居民信息
   doctorSheet: 医生信息
   operatorSheet: 运营用户
