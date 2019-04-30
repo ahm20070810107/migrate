@@ -3,6 +3,7 @@ package com.hitales.national.migrate.service;
 import com.google.common.base.Strings;
 import com.hitales.national.migrate.common.IdCard;
 import com.hitales.national.migrate.common.Phone;
+import com.hitales.national.migrate.dao.CountyDao;
 import com.hitales.national.migrate.dao.DoctorClinicDao;
 import com.hitales.national.migrate.dao.DoctorDao;
 import com.hitales.national.migrate.entity.Doctor;
@@ -38,27 +39,30 @@ public class DoctorService{
     private Map<String,Integer> clinicMap;
 
     @Autowired
+    private CountyDao countyDao;
+
+    @Autowired
     private DoctorClinicDao doctorClinicDao;
 
     @Autowired
     private PasswordEncoder passEncoder;
 
-    public boolean verify(String sheetName){
+    public boolean verify(String sheetName, String countySheet){
         SXSSFWorkbook verifyWorkbook = new SXSSFWorkbook(CommonToolsService.MAX_READ_SIZE);
-        boolean verifyResult = verifyDoctor(sheetName,verifyWorkbook);
+        boolean verifyResult = verifyDoctor(sheetName,countySheet,verifyWorkbook);
         commonToolsService.saveExcelFile(verifyWorkbook, sheetName);
         return verifyResult;
     }
 
-    public boolean importToDb(String sheetName){
-        if(!verify(sheetName)){
+    public boolean importToDb(String sheetName, String countySheet){
+        if(!verify(sheetName,countySheet)){
             return false;
         }
 
         clinicMap = new HashMap<>();
 
         XSSFSheet sourceDataSheet = commonToolsService.getSourceSheetByName(sheetName);
-        List<Doctor> doctors = sheetToDoctors(1,sourceDataSheet);
+        List<Doctor> doctors = sheetToDoctors(1,sourceDataSheet, countySheet);
 
         doctorDao.saveAll(doctors);
 
@@ -66,8 +70,9 @@ public class DoctorService{
     }
 
 
-    private List<Doctor> sheetToDoctors(Integer startRowIndex, Sheet doctorSheet){
+    private List<Doctor> sheetToDoctors(Integer startRowIndex, Sheet doctorSheet, String countySheet){
         List<Doctor> doctors = new ArrayList<>();
+        Long countyId = commonToolsService.getCountyId(countyDao,commonToolsService.getCountyPrefix(countySheet,false));
         for(int i = startRowIndex; i <= doctorSheet.getLastRowNum(); i++) {
             Row row = doctorSheet.getRow(i);
             Doctor doctor = new Doctor();
@@ -91,7 +96,7 @@ public class DoctorService{
             doctor.setAddress(address);
             doctor.setPhone(phone);
             doctor.setPassword(passEncoder.encode("123456"));
-            doctor.setClinicId(getClinicCode(clinic));
+            doctor.setClinicId(getClinicCode(clinic, countyId));
         }
 
         return doctors;
@@ -106,10 +111,10 @@ public class DoctorService{
         }
         return DoctorGender.NOT_SPECIFIED;
     }
-    private Integer getClinicCode(String clinic){
+    private Integer getClinicCode(String clinic, Long countyId){
         Integer clinicCode = clinicMap.get(clinic);
         if(Objects.isNull(clinicCode)){
-            List<DoctorClinic> doctorClinics = doctorClinicDao.findByName(clinic);
+            List<DoctorClinic> doctorClinics = doctorClinicDao.findByNameAndCountyId(clinic, countyId);
             if(doctorClinics.isEmpty()){
                 throw new RuntimeException(String.format("医疗机构信息[%s]在数据库中不存在！",clinic));
             }
@@ -122,13 +127,13 @@ public class DoctorService{
         return clinicCode;
     }
 
-    private boolean verifyDoctor(String doctorSheet, SXSSFWorkbook verifyWorkbook){
+    private boolean verifyDoctor(String doctorSheet, String countySheet, SXSSFWorkbook verifyWorkbook){
         int verifyRowCount = 1;
         boolean result = true;
         Set<String> idcardSet = new HashSet<>();
         Set<String> phoneSet = new HashSet<>();
         XSSFSheet sourceDataSheet = commonToolsService.getSourceSheetByName(doctorSheet);
-
+        Long countyId = commonToolsService.getCountyId(countyDao,commonToolsService.getCountyPrefix(countySheet,false));
         Sheet verifySheet = commonToolsService.getNewSheet(verifyWorkbook, doctorSheet, "原始行号,身份证号,身份证姓名,民族,家庭住址,手机号,所属医疗机构,备注",",");
 
         for(int i = 1; i <= sourceDataSheet.getLastRowNum(); i++) {
@@ -170,7 +175,7 @@ public class DoctorService{
             if(doctorDao.findByPhone(phone).size() > 0){
                 sb.append(count++).append("、电话号码在数据库中重复\r\n");
             }
-            if(Strings.isNullOrEmpty(clinic) || doctorClinicDao.findByName(clinic).size() < 1){
+            if(Strings.isNullOrEmpty(clinic) || doctorClinicDao.findByNameAndCountyId(clinic, countyId).size() < 1){
                 sb.append(count++).append("、所属医疗机构为空或在数据库中不存在\r\n");
             }
             if(count.compareTo(1) > 0){

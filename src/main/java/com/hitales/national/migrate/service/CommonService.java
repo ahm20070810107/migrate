@@ -80,7 +80,7 @@ public class CommonService {
         countyDao.saveAll(counties);
 
         XSSFSheet operatorDataSheet = commonToolsService.getSourceSheetByName(operatorSheet);
-        List<Operator> operators = sheetToOperators(1,operatorDataSheet);
+        List<Operator> operators = sheetToOperators(1,operatorDataSheet, countySheet);
         operatorDao.saveAll(operators);
 
 
@@ -90,34 +90,27 @@ public class CommonService {
         gb2260Dao.saveAll(gb2260s);
 
         XSSFSheet clinicDataSheet = commonToolsService.getSourceSheetByName(clinicSheet);
-        List<DoctorClinic> doctorClinics = sheetToClinic(1,clinicDataSheet);
+        List<DoctorClinic> doctorClinics = sheetToClinic(1,clinicDataSheet,countySheet);
         doctorClinicDao.saveAll(doctorClinics);
         return true;
     }
 
     //TODO
-    private List<DoctorClinic> sheetToClinic(Integer startRowIndex, Sheet clinicSheet){
+    private List<DoctorClinic> sheetToClinic(Integer startRowIndex, Sheet clinicSheet, String countySheet){
         List<ClinicPojo> doctorClinicPojos = new ArrayList<>();
         for(int i = startRowIndex; i <= clinicSheet.getLastRowNum(); i++) {
             Row row = clinicSheet.getRow(i);
             doctorClinicPojos.add(getClinicPojo(row));
         }
         List<DoctorClinic> doctorClinics = new ArrayList<>();
-        fillClinicInfo(doctorClinicPojos, doctorClinics);
+        fillClinicInfo(doctorClinicPojos, doctorClinics, countySheet);
         return doctorClinics;
     }
 
-    private Long getCountyId(){
-        Long countyCode = Long.parseLong(countyCodePrefix) * 1000000000;
-        Optional<County> countyOptional = countyDao.findByLocation(countyCode);
-        if(!countyOptional.isPresent()){
-            throw new RuntimeException(String.format("数据库中对应县编码%s不存在",countyCode.toString()));
-        }
-        return countyOptional.get().getId();
-    }
 
-    private void fillClinicInfo(List<ClinicPojo> clinicPojos, List<DoctorClinic> doctorClinics){
-         Long countyId = getCountyId();
+
+    private void fillClinicInfo(List<ClinicPojo> clinicPojos, List<DoctorClinic> doctorClinics, String countySheet){
+         Long countyId = commonToolsService.getCountyId(countyDao,commonToolsService.getCountyPrefix(countySheet,false));
 
          Integer countyClinicId = getCountyClinicId();
 
@@ -262,9 +255,9 @@ public class CommonService {
     }
 
 
-    private List<Operator> sheetToOperators(Integer startRowIndex, Sheet operatorSheet){
+    private List<Operator> sheetToOperators(Integer startRowIndex, Sheet operatorSheet, String countySheet){
         List<Operator> operators = new ArrayList<>();
-        Long countId = getCountyId();
+        Long countId = commonToolsService.getCountyId(countyDao,commonToolsService.getCountyPrefix(countySheet,false));
         for(int i = startRowIndex; i <= operatorSheet.getLastRowNum(); i++) {
             Row row = operatorSheet.getRow(i);
             String loginName = row.getCell(0).getStringCellValue();

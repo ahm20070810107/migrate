@@ -1,6 +1,8 @@
 package com.hitales.national.migrate.service;
 
 import com.google.common.base.Strings;
+import com.hitales.national.migrate.dao.CountyDao;
+import com.hitales.national.migrate.entity.County;
 import com.hitales.national.migrate.enums.Nation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
@@ -20,10 +22,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA
@@ -161,13 +160,22 @@ public class CommonToolsService {
         }
     }
 
-    public String getCountyPrefix(String countySheet){
+    public String getCountyPrefix(String countySheet, boolean prefix){
         Sheet sheet = getSourceSheetByName(countySheet);
         String code = sheet.getRow(1).getCell(2).getStringCellValue();
-        if(!Objects.isNull(code) && code.length() > 6){
+        if(prefix && !Objects.isNull(code) && code.length() > 6){
             return code.substring(0,6);
         }
         return Objects.isNull(code)?"": code;
+    }
+
+    public Long getCountyId(CountyDao countyDao, String countyCodeStr){
+        Long countyCode = Long.parseLong(countyCodeStr);
+        Optional<County> countyOptional = countyDao.findByLocation(countyCode);
+        if(!countyOptional.isPresent()){
+            throw new RuntimeException(String.format("数据库中对应县编码%s不存在",countyCode.toString()));
+        }
+        return countyOptional.get().getId();
     }
 
 }

@@ -57,7 +57,7 @@ public class CitizenService {
         if(!verify(citizenSheet,countySheet)){
             return false;
         }
-        String countyPrefix = commonToolsService.getCountyPrefix(countySheet);
+        String countyPrefix = commonToolsService.getCountyPrefix(countySheet, true);
         villageMap = new HashMap<>();
         List<Citizen> citizens = new ArrayList<>();
         XSSFSheet sourceDataSheet = commonToolsService.getSourceSheetByName(citizenSheet);
@@ -139,7 +139,7 @@ public class CitizenService {
         int verifyRowCount = 1;
         Set<String> idcardSet = new HashSet<>();
         boolean result = true;
-        String countyPrefix = commonToolsService.getCountyPrefix(countySheet);
+        String countyPrefix = commonToolsService.getCountyPrefix(countySheet, true);
         XSSFSheet sourceDataSheet = commonToolsService.getSourceSheetByName(citizenSheet);
 
         Sheet verifySheet = commonToolsService.getNewSheet(verifyWorkbook, citizenSheet, "原始行号,证件类型,证件号码,证件姓名,民族,家庭住址,本人电话,所属自然村,备注", ",");
